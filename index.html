@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sim Astrobarbershop V1.1</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-card: #1e1e1e;
+            --primary: #d4af37; /* Gold */
+            --primary-hover: #b5952f;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --danger: #ff5252;
+            --success: #4caf50;
+            --info: #2196f3;
+            --savings: #00bcd4;
+            --emergency: #e91e63;
+            --border: #333;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            display: flex; 
+            width: 100vw;       
+            height: 100vh;      
+            overflow: hidden;   
+            margin: 0; 
+            padding: 0;
+        }
+
+        #app-content { display: flex; width: 100%; height: 100%; flex-direction: row; }
+
+        aside { 
+            width: 270px; 
+            background-color: var(--bg-card); 
+            border-right:1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px; 
+            flex-shrink: 0;     
+            height: 100%;
+            overflow-y: auto;   
+        }
+        
+        main { 
+            flex:1;            
+            padding: 25px; 
+            overflow-y: auto;   
+            position: relative;
+            height: 100%;
+            width: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* LOGIN SCREEN */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-dark); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .login-box {
+            background: var(--bg-card); padding: 40px; border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 90%; max-width: 400px;
+            border: 1px solid var(--primary); text-align: center;
+        }
+        .login-box h2 { color: var(--primary); margin-bottom: 20px; }
+        .login-box input { margin-bottom: 15px; }
+        .login-box .btn { width: 100%; margin-bottom: 10px; }
+        .login-links a { color: var(--info); font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
+
+        .brand { font-size: 1.2rem; font-weight: bold; color: var(--primary); margin-bottom: 30px; text-align: center; letter-spacing: 1px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; line-height: 1.4; }
+        
+        nav button { background: none; border: none; color: var(--text-muted); width: 100%; padding: 12px; text-align: left; cursor: pointer; font-size: 0.95rem; transition: 0.3s; border-radius: 8px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
+        nav button:hover, nav button.active { background-color: rgba(212, 175, 55, 0.1); color: var(--primary); }
+        nav button.logout-btn { margin-top: auto; color: var(--danger); }
+        nav button.logout-btn:hover { background-color: rgba(255, 82, 82, 0.1); }
+
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        h2 { font-weight: 400; border-left: 4px solid var(--primary); padding-left: 15px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 25px; width: 100%; }
+        .card { background-color: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px; }
+        .card.danger-zone { border: 2px solid var(--danger); background-color: rgba(255, 82, 82, 0.05); }
+        .card.report-card { border-left: 5px solid var(--primary); }
+        .card.emergency-card { border-left: 5px solid var(--emergency); }
+        
+        .stat-label { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 1.6rem; font-weight: bold; color: var(--primary); }
+        .stat-value-emergency { color: var(--emergency); }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .tab { padding: 8px 16px; cursor: pointer; background: #333; border-radius: 4px; font-size: 0.9rem; user-select: none; }
+        .tab.active { background: var(--primary); color: #000; font-weight: bold; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 12px; background-color: #2c2c2c; border: 1px solid var(--border); border-radius: 6px; color: white; font-size: 0.95rem; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+
+        button.btn { background-color: var(--primary); color: #000; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 0.9rem; }
+        button.btn:hover { background-color: var(--primary-hover); }
+        button.btn-danger { background-color: var(--danger); color: white; }
+        button.btn-info { background-color: var(--info); color: white; }
+        button.btn-secondary { background-color: #555; color: white; }
+        button.btn-warning { background-color: #ff9800; color: white; }
+        button.btn-print { background-color: #607d8b; color: white; }
+        button.btn-success { background-color: var(--success); color: white; }
+        button.btn-emergency { background-color: var(--emergency); color: white; }
+        button.btn-sm { padding: 4px 8px; font-size: 0.8rem; }
+        
+        .table-container { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+        th { background-color: #252525; color: var(--text-muted); font-weight: 600; position: sticky; top: 0; }
+        
+        tr.voided-row { opacity: 0.5; text-decoration: line-through; background-color: rgba(255, 82, 82, 0.05); }
+        
+        .detail-list { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; display: flex; flex-direction: column; gap: 4px; }
+        .detail-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 2px 0; }
+        .detail-item span:last-child { font-weight: bold; color: var(--text-main); }
+
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Grid Layouts */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+
+        #toast { visibility: hidden; min-width: 250px; background-color: var(--primary); color: #000; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 1000; right: 30px; bottom: 30px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
+        .badge-locked { background-color: rgba(255, 152, 0, 0.2); color: #ff9800; }
+        .badge-in { background-color: rgba(76, 175, 80, 0.2); color: #4caf50; }
+        .badge-out { background-color: rgba(255, 82, 82, 0.2); color: #ff5252; }
+        .badge-void { background-color: #333; color: #777; border: 1px solid #555; }
+
+        .action-btns { display: flex; gap: 5px; }
+        .action-btns button { padding: 4px 8px; font-size: 0.75rem; }
+        
+        .sub-header { font-size: 1rem; color: var(--primary); margin: 15px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .report-divider { border-top: 1px dashed #444; margin: 10px 0; }
+
+        /* Report Specific Styling */
+        .report-summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
+        .report-summary-row.total { font-weight: bold; font-size: 1.1rem; color: var(--primary); margin-top: 10px; padding-top: 10px; border-top: 1px solid #444; }
+        .report-summary-row.negative { color: var(--danger); }
+        
+        /* Owner Input List in Settings */
+        .owner-input-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .owner-input-row input { margin-bottom: 0; }
+        .owner-input-row button { flex-shrink: 0; }
+
+        /* Owner List in Closing Book */
+        .owner-shares-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; max-height: 200px; overflow-y: auto; }
+        .owner-share-item { display: flex; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; }
+        .owner-share-info { flex: 1; }
+        .owner-share-label { font-size: 0.9rem; color: var(--text-muted); }
+        .owner-share-calc { font-size: 1.1rem; font-weight: bold; color: var(--success); }
+
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; color: var(--primary); font-size: 1.5rem; flex-direction: column; gap: 15px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(212,175,55,0.3); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* PRINT STYLES */
+        @media print {
+            body { background-color: white; color: black; height: auto; overflow: visible; display: block; font-size: 11pt; -webkit-print-color-adjust: exact; }
+            main { padding: 0; margin: 0; width: 100%; overflow: visible; }
+            aside, nav, .no-print, .tabs, .btn, .action-btns, #toast, #loading-overlay, .form-group, .login-screen { display: none !important; }
+            .section { display: none !important; }
+            #laporan-keuangan { display: block !important; }
+            #tab-live { display: block !important; }
+            #report-result { display: block !important; }
+            #final-result { display: block !important; margin-top: 20px; }
+            
+            #laporan-keuangan { padding: 20px; }
+            .card { 
+                border: 1px solid #ccc; 
+                box-shadow: none; 
+                padding: 15px; 
+                margin-bottom: 20px; 
+                break-inside: avoid; 
+                page-break-inside: avoid; 
+                background: white; 
+                color: black;
+            }
+            .card.report-card { border: 2px solid black; }
+            .card.emergency-card { border: 1px solid black; }
+            
+            .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            
+            table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 0; }
+            th, td { border: 1px solid #000; padding: 6px; color: black; text-align: left; }
+            th { background-color: #eee !important; font-weight: bold; color: black !important; }
+
+            h2, .sub-header { display: none; } 
+            .print-only { display: block !important; margin-bottom: 20px; text-align: center; }
+            .print-only h1 { font-size: 18pt; color: black; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
+            .print-only h2 { font-size: 12pt; color: black; font-weight: normal; display: block !important;}
+            
+            .stat-value { color: black; }
+            .report-summary-row.total { color: black; border-top: 2px solid black; }
+            .stat-label { color: #555; }
+            
+            input, select { display: none; } 
+            
+            /* Print Styles for Owner Shares */
+            .owner-shares-list { max-height: none; overflow: visible; }
+            .owner-share-item { background: none; border-bottom: 1px solid #eee; padding: 5px 0; }
+            .owner-share-calc { color: black; font-weight: bold; }
+        }
+        
+        .print-only { display: none; } 
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>BARBER MANAGER</h2>
+            <div class="form-group"><input type="email" id="login-email" placeholder="Email"></div>
+            <div class="form-group"><input type="password" id="login-pass" placeholder="Password"></div>
+            <button class="btn" onclick="window.handleLogin()">MASUK</button>
+            <div class="login-links">
+                <a onclick="window.handleResetPassword()">Lupa Password?</a>
+            </div>
+            <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px;">
+                <p style="font-size:0.8rem; color:#aaa;">Belum punya akun? Hubungi Owner.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP CONTENT -->
+    <div id="app-content" class="hidden" style="display: flex; height: 100vh;">
+        
+        <aside class="no-print">
+            <div class="brand" id="brand-name">BARBERSHOP MANAGER</div>
+            <nav>
+                <button class="nav-btn active" onclick="window.showSection('dashboard')">📊 Dashboard</button>
+                <button class="nav-btn" onclick="window.showSection('transaksi')">💈 Transaksi</button>
+                
+                <!-- OWNER ONLY MENU -->
+                <div class="owner-menu hidden">
+                    <button class="nav-btn" onclick="window.showSection('master-data')">📦 Master Data</button>
+                    <button class="nav-btn" onclick="window.showSection('gaji-karyawan')">💰 Gaji Karyawan</button>
+                    <button class="nav-btn" onclick="window.showSection('laporan-keuangan')">📈 Laporan & Tutup Buku</button>
+                    <button class="nav-btn" onclick="window.showSection('pengaturan')">⚙️ Pengaturan & Akun</button>
+                </div>
+
+                <!-- STAFF MENU -->
+                <div class="staff-menu hidden">
+                    <button class="nav-btn" onclick="window.showSection('laporan-kas-staff')">📉 Laporan Kas Saya</button>
+                </div>
+
+                <button class="nav-btn logout-btn" onclick="window.handleLogout()">🚪 Logout</button>
+            </nav>
+            <div style="margin-top:auto; padding-top:20px; font-size:0.8rem; color:#666;">
+                Login sebagai: <br> <strong id="user-display-email" style="color:var(--primary)"></strong>
+            </div>
+        </aside>
+
+        <main>
+            <div id="toast">Notifikasi</div>
+
+            <!-- 1. DASHBOARD -->
+            <section id="dashboard" class="section active">
+                <header>
+                    <h2>Ringkasan Bisnis</h2>
+                    <p id="current-date" style="color: var(--text-muted);"></p>
+                </header>
+                <div class="stats-grid">
+                    <div class="card"><div class="stat-label">Total Modal Masuk</div><div class="stat-value" id="dash-cash">Rp 0</div></div>
+                    <div class="card" style="border-color: var(--savings);"><div class="stat-label">Tabungan</div><div class="stat-value" id="dash-savings" style="color: var(--savings)">Rp 0</div></div>
+                    <div class="card" style="border-color: var(--emergency);"><div class="stat-label">Dana Darurat</div><div class="stat-value" id="dash-emergency" style="color: var(--emergency)">Rp 0</div></div>
+                    <div class="card"><div class="stat-label">Pendapatan Bln Ini</div><div class="stat-value" id="dash-income">Rp 0</div></div>
+                    <div class="card"><div class="stat-label">Pengeluaran Bln Ini</div><div class="stat-value" id="dash-expense" style="color: var(--danger)">Rp 0</div></div>
+                </div>
+            </section>
+
+            <!-- 2. TRANSAKSI -->
+            <section id="transaksi" class="section">
+                <header><h2>Input Transaksi Harian</h2></header>
+                <div class="grid-2">
+                    <div class="card">
+                        <form id="form-transaction" onsubmit="window.handleTransactionSubmit(event)">
+                            <div class="form-group"><label>Jenis Transaksi</label><select id="trx-type" onchange="window.toggleTransactionFields()"><option value="income">Pendapatan (Omset)</option><option value="expense">Pengeluaran</option></select></div>
+                            <div class="form-group"><label>Tanggal</label><input type="date" id="trx-date" required></div>
+                            
+                            <div id="income-fields">
+                                <div class="form-group">
+                                    <label>Kategori</label>
+                                    <select id="trx-category" onchange="window.toggleCategoryFields()">
+                                        <option value="service">Layanan (Jasa Potong)</option>
+                                        <option value="good">Penjualan Barang (Produk)</option>
+                                    </select>
+                                </div>
+
+                                <div id="service-specific">
+                                    <div class="form-group">
+                                        <label>Karyawan (Barber)</label>
+                                        <select id="trx-employee" onchange="window.showEmployeeCommInfo()">
+                                            <option value="">-- Pilih --</option>
+                                        </select>
+                                        <small id="emp-comm-hint" style="color: var(--primary); font-size: 0.8rem; display:block; margin-top:4px;"></small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Layanan</label>
+                                        <select id="trx-product" onchange="window.autoFillPrice()">
+                                            <option value="">-- Pilih Layanan --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="good-specific" style="display:none;">
+                                    <div class="form-group">
+                                        <label>Barang</label>
+                                        <select id="trx-good" onchange="window.autoFillPriceGood()">
+                                            <option value="">-- Pilih Barang --</option>
+                                        </select>
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+                                        Stok Tersedia: <span id="stock-display" style="color: var(--success); font-weight: bold;">0</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid-2" style="gap:10px;">
+                                    <div class="form-group"><label>Harga Satuan</label><input type="number" id="trx-price" readonly style="background:#333; color: #888;"></div>
+                                    <div class="form-group"><label>Jumlah</label><input type="number" id="trx-qty" value="1" min="1" oninput="window.updateTotalPrice()"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="expense-fields" style="display:none;">
+                                <div class="form-group"><label>Keterangan / Item</label><input type="text" id="trx-desc" placeholder="Contoh: Beli Sabun, Bayar Listrik"></div>
+                            </div>
+                            
+                            <div class="form-group"><label>Total Nominal (Rp)</label><input type="number" id="trx-amount" min="0" required></div>
+                            
+                            <div class="action-group" style="display:flex; gap:10px;">
+                                <button type="submit" class="btn" id="btn-save-trx" style="flex:1">SIMPAN TRANSAKSI</button>
+                                <button type="button" class="btn btn-secondary" id="btn-cancel-trx" onclick="window.resetTransactionForm()" style="display:none;">BATAL</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Riwayat Transaksi</h3>
+                        <div class="grid-2" style="gap:10px; margin-bottom:10px;">
+                            <div class="form-group"><label>Mulai</label><input type="date" id="trx-history-start" onchange="window.renderTransactionHistory()"></div>
+                            <div class="form-group"><label>Selesai</label><input type="date" id="trx-history-end" onchange="window.renderTransactionHistory()"></div>
+                        </div>
+                        
+                        <div class="table-container">
+                            <table id="today-trx-table">
+                                <thead><tr><th>Tipe</th><th>Info</th><th>Jml</th><th>Total</th><th>Aksi</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. MASTER DATA -->
+            <section id="master-data" class="section">
+                <header><h2>Master Data</h2></header>
+                <div class="grid-3">
+                    <div class="card">
+                        <h3>Layanan / Jasa</h3>
+                        <div class="form-group"><input type="text" id="prod-name" placeholder="Nama Layanan"></div>
+                        <div class="form-group"><input type="number" id="prod-price" placeholder="Harga Jual (Rp)"></div>
+                        <div class="action-group" style="display:flex; gap:10px;">
+                            <button class="btn" id="btn-save-prod" onclick="window.saveProduct()">TAMBAH</button>
+                            <button class="btn btn-secondary" id="btn-cancel-prod" onclick="window.resetProductForm()" style="display:none;">Batal</button>
+                        </div>
+                        <div class="table-container" style="margin-top:15px;">
+                            <table id="product-table"><thead><tr><th>Nama</th><th>Harga</th><th>Aksi</th></tr></thead><tbody></tbody></table>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Data Karyawan</h3>
+                        <div class="form-group"><input type="text" id="emp-name" placeholder="Nama Karyawan"></div>
+                        <div class="grid-2" style="gap:10px;">
+                            <div class="form-group"><label>Tipe Komisi</label><select id="emp-comm-type"><option value="percent">Persen (%)</option><option value="nominal">Nominal (Rp)</option></select></div>
+                            <div class="form-group"><label>Nilai</label><input type="number" id="emp-comm-value" placeholder="cth: 20 atau 10000"></div>
+                        </div>
+                        <div class="action-group" style="display:flex; gap:10px;">
+                            <button class="btn" id="btn-save-emp" onclick="window.saveEmployee()">TAMBAH</button>
+                            <button class="btn btn-secondary" id="btn-cancel-emp" onclick="window.resetEmployeeForm()" style="display:none;">Batal</button>
+                        </div>
+                        <div class="table-container" style="margin-top:15px;">
+                            <table id="employee-table"><thead><tr><th>Nama</th><th>Komisi</th><th>Aksi</th></tr></thead><tbody></tbody></table>
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-top: 3px solid var(--info);">
+                        <h3>Stok Barang</h3>
+                        <div class="form-group"><input type="text" id="good-name" placeholder="Nama Barang"></div>
+                        <div class="form-group"><input type="number" id="good-price" placeholder="Harga Jual (Rp)"></div>
+                        <div class="form-group"><input type="number" id="good-stock" placeholder="Stok Awal / Restock"></div>
+                        <div class="action-group" style="display:flex; gap:10px;">
+                            <button class="btn btn-info" id="btn-save-good" onclick="window.saveGood()">TAMBAH/UPDATE</button>
+                            <button class="btn btn-secondary" id="btn-cancel-good" onclick="window.resetGoodForm()" style="display:none;">Batal</button>
+                        </div>
+                        <div class="table-container" style="margin-top:15px;">
+                            <table id="good-table"><thead><tr><th>Nama</th><th>Harga</th><th>Stok</th><th>Aksi</th></tr></thead><tbody></tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. GAJI KARYAWAN -->
+            <section id="gaji-karyawan" class="section">
+                <header><h2>Gaji Karyawan</h2></header>
+                <div class="tabs no-print">
+                    <div class="tab active" onclick="window.switchPayrollTab('live')">Live Preview</div>
+                    <div class="tab" onclick="window.switchPayrollTab('history')">Riwayat (Terkunci)</div>
+                </div>
+                <div id="tab-pay-live" class="tab-content">
+                    <div class="card no-print" style="margin-bottom: 20px;">
+                        <div class="grid-2">
+                            <div class="form-group"><label>Mulai</label><input type="date" id="pay-start"></div>
+                            <div class="form-group"><label>Selesai</label><input type="date" id="pay-end"></div>
+                        </div>
+                        <div class="action-group" style="display:flex; gap:10px;">
+                            <button class="btn" onclick="window.calculatePayroll()">Hitung Gaji</button>
+                            <button class="btn btn-warning" onclick="window.savePayrollHistory()">Simpan & Kunci Riwayat</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table id="payroll-table"><thead><tr><th>Nama</th><th>Cust</th><th>Omset</th><th>Gaji</th><th>Detail</th></tr></thead><tbody></tbody></table>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-pay-history" class="tab-content" style="display:none;">
+                    <div class="card">
+                        <h3>Riwayat Gaji (Terkunci)</h3>
+                        <div class="table-container">
+                            <!-- Tabel History Diperluas agar Sama dengan Live Preview -->
+                            <table id="payroll-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Periode</th>
+                                        <th>Nama</th>
+                                        <th style="text-align:center">Cust</th>
+                                        <th style="text-align:right">Omset</th>
+                                        <th style="text-align:right">Gaji</th>
+                                        <th>Detail</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. LAPORAN & TUTUP BUKU -->
+            <section id="laporan-keuangan" class="section">
+                <header>
+                    <h2>Laporan & Tutup Buku</h2>
+                    <div class="action-group no-print">
+                        <button class="btn btn-print" onclick="window.printReport()">🖨️ Cetak Laporan</button>
+                        <button class="btn btn-info" onclick="window.backupData()">💾 Backup</button>
+                    </div>
+                </header>
+                
+                <div class="tabs no-print">
+                    <div class="tab active" onclick="window.switchReportTab('live')">Live Preview</div>
+                    <div class="tab" onclick="window.switchReportTab('history')">Riwayat (Terkunci)</div>
+                </div>
+                
+                <div id="tab-live" class="tab-content">
+                    <div class="card no-print">
+                        <div class="grid-2" id="rep-date-filters">
+                            <div class="form-group"><label>Mulai</label><input type="date" id="rep-start"></div>
+                            <div class="form-group"><label>Selesai</label><input type="date" id="rep-end"></div>
+                        </div>
+                        <div style="text-align: right; margin-bottom: 10px;">
+                            <button class="btn" onclick="window.generateFinancialReport()">BUAT LAPORAN</button>
+                        </div>
+                    </div>
+                    
+                    <div id="report-result" style="display:none;">
+                        
+                        <div class="print-only">
+                            <h1 id="print-business-name">LAPORAN KEUANGAN</h1>
+                            <h2 id="print-period"></h2>
+                        </div>
+
+                        <!-- 1. LAPORAN ARUS KAS -->
+                        <div class="card report-card">
+                            <h3 class="sub-header">Laporan Arus Kas (Cash Flow)</h3>
+                            <div class="report-summary-row">
+                                <span>Saldo Awal Kas (Modal Awal)</span>
+                                <span id="rep-cash-open">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(+) Total Modal Masuk (Periode Ini)</span>
+                                <span id="rep-cash-inject">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(+) Pendapatan Kotor</span>
+                                <span id="rep-income-total">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(-) Pengeluaran Operasional</span>
+                                <span id="rep-exp-total" style="color:var(--danger)">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(-) Gaji Karyawan</span>
+                                <span id="rep-salary-total">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(-) Setor Tabungan</span>
+                                <span id="rep-savings-out">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(+) Penarikan Tabungan ke Kas</span>
+                                <span id="rep-savings-in">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(-) Setor Dana Darurat</span>
+                                <span id="rep-emergency-out" style="color:var(--emergency)">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(+) Penarikan Dana Darurat ke Kas</span>
+                                <span id="rep-emergency-in">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row total">
+                                <span>= Saldo Akhir Kas (Hasil Operasional)</span>
+                                <span id="rep-cash-close">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <!-- 2. LAPORAN PERUBAHAN TABUNGAN -->
+                        <div class="card report-card" style="border-left-color: var(--savings);">
+                            <h3 class="sub-header">Laporan Perubahan Tabungan</h3>
+                            <div class="report-summary-row">
+                                <span>Saldo Awal Tabungan</span>
+                                <span id="rep-sav-open">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(+) Setoran Selama Periode</span>
+                                <span id="rep-sav-deposit" style="color:var(--success)">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(-) Penarikan Selama Periode</span>
+                                <span id="rep-sav-withdraw" style="color:var(--danger)">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row total" style="color:var(--savings)">
+                                <span>= Saldo Akhir Tabungan</span>
+                                <span id="rep-sav-close">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <!-- 3. LAPORAN PERUBAHAN DANA DARURAT -->
+                        <div id="emergency-report-section" class="card emergency-card" style="display:none;">
+                            <h3 class="sub-header" style="color:var(--emergency)">Laporan Perubahan Dana Darurat</h3>
+                            <div class="report-summary-row">
+                                <span>Saldo Awal Dana Darurat</span>
+                                <span id="rep-emerg-open">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(+) Setoran Selama Periode</span>
+                                <span id="rep-emerg-deposit" style="color:var(--success)">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>(-) Penarikan Selama Periode</span>
+                                <span id="rep-emerg-withdraw" style="color:var(--danger)">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row total" style="color:var(--emergency)">
+                                <span>= Saldo Akhir Dana Darurat</span>
+                                <span id="rep-emerg-close">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <!-- 4. LAPORAN LABA RUGI -->
+                        <div class="card report-card">
+                            <h3 class="sub-header">Laporan Laba Rugi (Profit & Loss)</h3>
+                            <div class="report-summary-row">
+                                <span>Pendapatan Kotor</span>
+                                <span id="pl-gross">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>Beban Operasional (Expense)</span>
+                                <span id="pl-exp" style="color:var(--danger)">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row">
+                                <span>Beban Gaji Karyawan</span>
+                                <span id="pl-salary">Rp 0</span>
+                            </div>
+                            <div class="report-summary-row total">
+                                <span>= LABA BERSIH OPERASIONAL</span>
+                                <span id="pl-net">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <!-- 5. DETAIL TRANSAKSI -->
+                        <div class="card">
+                            <h4 class="sub-header">Rincian Pemasukan</h4>
+                            <div class="table-container" style="max-height:300px;">
+                                <table id="report-inc-table">
+                                    <thead><tr><th>Tgl</th><th>Kategori</th><th>Item</th><th>Info Tambahan</th><th>Jml</th><th>Nominal</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h4 class="sub-header">Rincian Pengeluaran</h4>
+                            <div class="table-container" style="max-height:300px;">
+                                <table id="report-exp-table">
+                                    <thead><tr><th>Tgl</th><th>Keterangan</th><th>Nominal</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 6. TUTUP BUKU & BAGI HASIL -->
+                        <div class="card no-print" style="border: 2px solid var(--savings);">
+                            <h3 style="color: var(--savings)">Tutup Buku & Bagi Hasil Owner</h3>
+                            <p style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">
+                                Perhitungan Bagi Hasil didasarkan pada <strong>Laba Bersih Dikurangi Tabungan & Dana Darurat</strong>.
+                            </p>
+                            <div class="grid-2">
+                                <div>
+                                    <div class="stat-label">Laba Bersih Saat Ini</div>
+                                    <div class="stat-value" id="temp-op-profit" style="color: var(--success)">Rp 0</div>
+                                </div>
+                                <div>
+                                    <div class="grid-2" style="gap:10px;">
+                                        <div><label>Nominal Setor Tabungan</label><input type="number" id="input-savings-amount" placeholder="Rp 0"></div>
+                                        <div><label style="color:var(--emergency)">Nominal Dana Darurat</label><input type="number" id="input-emergency-amount" placeholder="Rp 0"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="owner-shares-list" id="owner-shares-list-container">
+                                <!-- Dynamic Owner Inputs will be injected here -->
+                            </div>
+
+                            <!-- BUTTONS: 2 STEP PROCESS -->
+                            <div style="text-align: right; display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px;">
+                                <button class="btn" onclick="window.processClosingMonth()">1. PROSES (LIHAT HASIL)</button>
+                                <button class="btn btn-success" id="btn-save-lock-report" onclick="window.saveClosingMonth()" style="display:none;">2. SIMPAN & KUNCI LAPORAN</button>
+                            </div>
+                        </div>
+
+                        <!-- FINAL RESULT DISPLAY -->
+                        <div id="final-result" style="display:none;">
+                            <div class="card" style="border-color: var(--success);">
+                                <h3 style="color: var(--success)">Ringkasan Hasil Bagi & Saldo Kas</h3>
+                                <div class="owner-shares-list" id="final-shares-display">
+                                    <!-- Dynamic Results -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-history" class="tab-content" style="display:none;">
+                    <!-- CONTAINER FOR DETAILED HISTORY CARDS -->
+                    <div id="history-container">
+                        <!-- Cards will be injected via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. PENGATURAN -->
+            <section id="pengaturan" class="section">
+                <header><h2>Pengaturan Bisnis & Akun</h2></header>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>⚙️ Konfigurasi Bisnis</h3>
+                        <div class="form-group"><label>Nama Usaha</label><input type="text" id="conf-business-name" placeholder="Barbershop Anda"></div>
+                        <button class="btn btn-info" style="width:100%" onclick="window.saveConfig()">Simpan Konfigurasi</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>👥 Konfigurasi Owner & Bagi Hasil</h3>
+                        <p style="font-size:0.8rem; color:#aaa; margin-bottom:15px;">
+                            Tambahkan owner dan atur persentase bagi hasil default. Total persentase sebaiknya 100%.
+                        </p>
+                        <div id="owner-settings-container" style="margin-bottom: 15px;">
+                            <!-- Dynamic Owner Inputs injected here -->
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="window.addOwnerConfig()">+ Tambah Owner</button>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>👤 Tambah Akun User</h3>
+                        <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Buat akun untuk karyawan atau owner lain.</p>
+                        <div class="form-group"><label>Email</label><input type="email" id="new-user-email" placeholder="email@contoh.com"></div>
+                        <div class="form-group"><label>Password Sementara</label><input type="text" id="new-user-pass" placeholder="Password awal"></div>
+                        <div class="form-group"><label>Role / Jabatan</label><select id="new-user-role"><option value="staff">Staff (Karyawan)</option><option value="owner">Owner (Penuh Akses)</option></select></div>
+                        <button class="btn btn-success" style="width:100%; background-color: var(--success); color:white;" onclick="window.registerNewUser()">BUAT AKUN BARU</button>
+                    </div>
+
+                    <div class="card">
+                        <h3>💰 Modal Awal / Inject</h3>
+                        <div class="grid-2" style="gap:10px;">
+                            <div class="form-group"><input type="date" id="inject-date"></div>
+                            <div class="form-group"><input type="number" id="inject-amount" placeholder="Rp"></div>
+                        </div>
+                        <button class="btn" onclick="window.addCapitalInjection()">Tambah Modal</button>
+                    </div>
+                    
+                    <!-- TABUNGAN CARD (FULL RECOVERY) -->
+                    <div class="card" style="border-color: var(--savings);">
+                        <h3>💎 Tabungan & Koreksi</h3>
+                        <div class="grid-2">
+                            <div>
+                                <div class="form-group"><label>Aksi</label><select id="saving-action-type"><option value="deposit">Setor</option><option value="withdraw">Tarik</option></select></div>
+                                <div class="form-group"><input type="number" id="saving-manual-amount"></div>
+                                <button class="btn btn-info" style="width:100%" onclick="window.manualSavingsTransaction()">Proses</button>
+                            </div>
+                            <div style="border-left: 1px solid var(--border); padding-left: 20px;">
+                                <h4 style="color: var(--danger)">Koreksi (Admin)</h4>
+                                <div class="form-group"><input type="number" id="saving-correction-amount" placeholder="Nilai (bisa minus)"></div>
+                                <button class="btn btn-danger" style="width:100%" onclick="window.manualSavingsCorrection()">KOREKSI SALDO</button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <div class="stat-label">Saldo Tabungan</div>
+                            <div class="stat-value" id="settings-savings-balance" style="color: var(--savings)">Rp 0</div>
+                        </div>
+                    </div>
+
+                    <!-- DANA DARURAT CARD (FULL RECOVERY) -->
+                    <div class="card" style="border-color: var(--emergency);">
+                        <h3>🚨 Dana Darurat & Koreksi</h3>
+                        <div class="grid-2">
+                            <div>
+                                <div class="form-group"><label>Aksi</label><select id="emergency-action-type"><option value="deposit">Setor</option><option value="withdraw">Tarik</option></select></div>
+                                <div class="form-group"><input type="number" id="emergency-manual-amount"></div>
+                                <button class="btn btn-emergency" style="width:100%" onclick="window.manualEmergencyTransaction()">Proses</button>
+                            </div>
+                            <div style="border-left: 1px solid var(--border); padding-left: 20px;">
+                                <h4 style="color: var(--danger)">Koreksi (Admin)</h4>
+                                <div class="form-group"><input type="number" id="emergency-correction-amount" placeholder="Nilai (bisa minus)"></div>
+                                <button class="btn btn-danger" style="width:100%" onclick="window.manualEmergencyCorrection()">KOREKSI SALDO</button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <div class="stat-label">Saldo Dana Darurat</div>
+                            <div class="stat-value stat-value-emergency" id="settings-emergency-balance">Rp 0</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ZONA BAHAYA CARD (FULL RECOVERY) -->
+                <div class="card danger-zone" style="margin-top: 30px; padding: 30px; text-align: center;">
+                    <h3 style="color: var(--danger); margin-bottom: 10px;">⚠️ ZONA BAHAYA</h3>
+                    <p style="margin-bottom: 20px; font-size: 0.9rem; color: #ccc;">Tindakan ini akan menghapus <strong>SELURUH DATA BISNIS</strong>.</p>
+                    <button class="btn btn-danger" style="width: 100%; max-width: 300px;" onclick="window.initiateDataReset()">RESET DATA SELURUHNYA</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-text">Memproses...</div>
+    </div>
+
+    <script type="module">
+        // Import Firebase v12.7.0
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyDmJTS6f_3kdAaM97O8HGvQqOBeTL8V8z8",
+          authDomain: "laporan-keuangan-8b07a.firebaseapp.com",
+          databaseURL: "https://laporan-keuangan-8b07a-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "laporan-keuangan-8b07a",
+          storageBucket: "laporan-keuangan-8b07a.firebasestorage.app",
+          messagingSenderId: "306767849046",
+          appId: "1:306767849046:web:9b5887e546e8616998bdf7",
+          measurementId: "G-XSDPZ3GCJ1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let appData = {
+            products: [], employees: [], goods: [], transactions: [],
+            reportHistory: [], payrollHistory: [],
+            config: { 
+                businessName: "GENTLEMEN'S CUT", 
+                owners: [ 
+                    { id: "1", name: "Owner 1", share: 50 },
+                    { id: "2", name: "Owner 2", share: 50 }
+                ],
+                savings: 0,
+                emergencySavings: 0
+            }
+        };
+        // Buffer variable for 2-step process
+        let pendingReportData = null; 
+        
+        let currentUser = null, userRole = 'staff', editingProdId = null, editingEmpId = null, editingGoodId = null, editingTrxId = null, lastCalculatedPayroll = [], creatorEmail = '', creatorPass = '';
+
+        // --- AUTH ---
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value, pass = document.getElementById('login-pass').value;
+            if(!email || !pass) return showToast("Email dan Password wajib diisi");
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                creatorEmail = email; creatorPass = pass;
+            } catch (error) { showToast("Login Gagal: " + error.message); }
+        }
+        async function handleLogout() { creatorEmail = ''; creatorPass = ''; await signOut(auth); }
+        async function registerNewUser() {
+            const email = document.getElementById('new-user-email').value, pass = document.getElementById('new-user-pass').value, role = document.getElementById('new-user-role').value;
+            if(!email || !pass) return showToast("Lengkapi data user baru");
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                await setDoc(doc(db, "users", userCredential.user.uid), { email, role, createdAt: new Date().toISOString() });
+                if(creatorEmail && creatorPass) { await signInWithEmailAndPassword(auth, creatorEmail, creatorPass); showToast("Akun dibuat!"); }
+                else alert("Akun baru dibuat. Silakan logout & login ulang.");
+                document.getElementById('new-user-email').value = ''; document.getElementById('new-user-pass').value = '';
+            } catch (error) { showToast("Gagal: " + error.message); }
+        }
+        async function handleResetPassword() {
+            const email = prompt("Masukkan email untuk reset password:");
+            if(email) {
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    showToast("Link reset password telah dikirim ke email.");
+                } catch(e) { showToast("Error: " + e.message); }
+            }
+        }
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('app-content').style.display = 'flex';
+                document.getElementById('user-display-email').innerText = user.email;
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) userRole = userDoc.data().role;
+                    else { userRole = 'owner'; await setDoc(doc(db, "users", user.uid), { email: user.email, role: 'owner', createdAt: new Date() }); }
+                } catch(e) { userRole = 'staff'; }
+                applyRoleRestrictions();
+                fetchAllData();
+            } else {
+                currentUser = null; userRole = 'staff';
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-content').classList.add('hidden');
+                document.getElementById('app-content').style.display = 'none';
+            }
+        });
+        function applyRoleRestrictions() {
+            const ownerMenu = document.querySelector('.owner-menu');
+            const staffMenu = document.querySelector('.staff-menu');
+            // Select all main nav buttons to hide Dashboard if needed
+            const navBtns = document.querySelectorAll('.nav-btn'); 
+            
+            if (userRole === 'owner') {
+                ownerMenu.classList.remove('hidden');
+                staffMenu.classList.add('hidden');
+                // Ensure Dashboard button is visible (index 0)
+                if(navBtns[0]) navBtns[0].style.display = 'flex'; 
+            } else {
+                // Staff Logic
+                ownerMenu.classList.add('hidden');
+                staffMenu.classList.add('hidden'); // Hide staff menu container
+                
+                // Hide Dashboard button (Index 0)
+                if(navBtns[0]) navBtns[0].style.display = 'none';
+
+                // Redirect to Transaksi automatically if not already there
+                const activeSection = document.querySelector('.section.active');
+                if (!activeSection || activeSection.id !== 'transaksi') {
+                    showSection('transaksi');
+                }
+            }
+        }
+
+        // --- DATA ---
+        async function fetchAllData() {
+            try {
+                const confDoc = await getDoc(doc(db, "config", "main_config"));
+                if (confDoc.exists()) { 
+                    appData.config = confDoc.data(); 
+                    if(!appData.config.owners || !Array.isArray(appData.config.owners)) {
+                        const o1 = appData.config.ownerNames?.owner1 || "Owner 1";
+                        const o2 = appData.config.ownerNames?.owner2 || "Owner 2";
+                        const s1 = appData.config.ownerShares?.owner1 || 50;
+                        const s2 = appData.config.ownerShares?.owner2 || 50;
+                        appData.config.owners = [
+                            { id: "1", name: o1, share: s1 },
+                            { id: "2", name: o2, share: s2 }
+                        ];
+                    }
+                    if(appData.config.emergencySavings === undefined) appData.config.emergencySavings = 0;
+                } else { 
+                    if(appData.config.emergencySavings === undefined) appData.config.emergencySavings = 0;
+                    await setDoc(doc(db, "config", "main_config"), appData.config); 
+                }
+                
+                const prodSnap = await getDocs(query(collection(db, "products"), orderBy("name")));
+                appData.products = prodSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                const empSnap = await getDocs(query(collection(db, "employees"), orderBy("name")));
+                appData.employees = empSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                const goodSnap = await getDocs(query(collection(db, "goods"), orderBy("name")));
+                appData.goods = goodSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                const trxSnap = await getDocs(query(collection(db, "transactions"), orderBy("date", "desc")));
+                appData.transactions = trxSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                
+                // FIX REPORT & PAYROLL: Use Firestore ID (d.id) primarily, fallback to data.id
+                const paySnap = await getDocs(query(collection(db, "payrollHistory"), orderBy("id", "desc")));
+                appData.payrollHistory = paySnap.docs.map(d => {
+                    const data = d.data();
+                    return { id: d.id, ...data }; 
+                });
+                
+                const repSnap = await getDocs(query(collection(db, "reportHistory"), orderBy("id", "desc")));
+                appData.reportHistory = repSnap.docs.map(d => {
+                    const data = d.data();
+                    return { id: d.id, ...data }; 
+                });
+
+                applyConfig(); refreshAllUI();
+            } catch (error) { console.error(error); showToast("Error Loading Data"); }
+        }
+        function formatRupiah(n) { return 'Rp ' + parseInt(n || 0).toLocaleString('id-ID'); }
+        function showToast(msg) { const x = document.getElementById("toast"); x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000); }
+        function showLoading(show, text="Memproses...") { const el = document.getElementById('loading-overlay'); document.getElementById('loading-text').innerText = text; el.style.display = show ? 'flex' : 'none'; }
+        function checkRole(roleNeeded = 'owner') { if (userRole !== roleNeeded) { showToast(`Akses Ditolak: Hanya ${roleNeeded === 'owner' ? 'Owner' : 'Staff'} yang boleh.`); return false; } return true; }
+        function showSection(id) { 
+            // Updated Logic: Include 'dashboard' in restriction list
+            if((id === 'master-data' || id === 'gaji-karyawan' || id === 'laporan-keuangan' || id === 'pengaturan' || id === 'dashboard') && !checkRole('owner')) return; 
+            
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); 
+            document.getElementById(id).classList.add('active'); 
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
+            
+            // FIX: Safe navigation for programmatically called functions
+            if(window.event) {
+                window.event.currentTarget.classList.add('active');
+            } else {
+                // If called programmatically, try to find button by ID or text
+                const btn = document.querySelector(`button[onclick*="showSection('${id}')"]`);
+                if(btn) btn.classList.add('active');
+            }
+        }
+        function refreshAllUI() {
+            renderProductOptions(); renderProductTable(); 
+            renderEmployeeOptions(); renderEmployeeTable();
+            renderGoodOptions(); renderGoodTable();
+            renderDashboard(); renderTransactionHistory(); updateBalances();
+            renderOwnerSettings(); 
+        }
+
+        // --- UPDATE BALANCES LOGIC (SEPARATED) ---
+        function updateBalances() {
+            // 1. Hitung Total Modal Masuk (Dashboard Only)
+            // User request: Dashboard hanya menampilkan Total Modal Masuk
+            let totalModal = 0; 
+            appData.transactions.forEach(t => {
+                if (t.type === 'modal_in') totalModal += t.amount; 
+            });
+
+            // 2. Update UI Dashboard (Label "Total Modal Masuk")
+            document.getElementById('dash-cash').innerText = formatRupiah(totalModal);
+
+            // 3. Update UI Tabungan & Darurat (Dari Config)
+            document.getElementById('dash-savings').innerText = formatRupiah(appData.config.savings);
+            document.getElementById('dash-emergency').innerText = formatRupiah(appData.config.emergencySavings);
+            document.getElementById('settings-savings-balance').innerText = formatRupiah(appData.config.savings);
+            document.getElementById('settings-emergency-balance').innerText = formatRupiah(appData.config.emergencySavings);
+        }
+
+        // --- MASTER DATA ---
+        async function saveProduct() { if(!checkRole('owner')) return; const n=document.getElementById('prod-name').value, p=parseInt(document.getElementById('prod-price').value); if(!n||!p) return showToast("Lengkapi data"); try { if(editingProdId) await updateDoc(doc(db, "products", editingProdId), { name: n, price: p }); else await addDoc(collection(db, "products"), { name:n, price:p }); await fetchAllData(); resetProductForm(); } catch(e) { showToast(e.message); } }
+        function editProduct(id) { if(!checkRole('owner')) return; const p=appData.products.find(x=>x.id===id); document.getElementById('prod-name').value=p.name; document.getElementById('prod-price').value=p.price; editingProdId=id; document.getElementById('btn-save-prod').innerText="UPDATE"; }
+        function resetProductForm() { document.getElementById('prod-name').value=''; document.getElementById('prod-price').value=''; editingProdId=null; document.getElementById('btn-save-prod').innerText="TAMBAH"; }
+        async function deleteProduct(id) { if(!checkRole('owner')) return; if(confirm('Hapus?')) { await deleteDoc(doc(db, "products", id)); await fetchAllData(); } }
+        function renderProductTable() { const tb=document.querySelector('#product-table tbody'); tb.innerHTML=''; appData.products.forEach(p=>tb.innerHTML+=`<tr><td>${p.name}</td><td>${formatRupiah(p.price)}</td><td><button class="btn btn-secondary" onclick="window.editProduct('${p.id}')">Edit</button> <button class="btn btn-danger" onclick="window.deleteProduct('${p.id}')">X</button></td></tr>`); }
+
+        async function saveEmployee() { if(!checkRole('owner')) return; const n=document.getElementById('emp-name').value, t=document.getElementById('emp-comm-type').value, v=parseFloat(document.getElementById('emp-comm-value').value); if(!n||isNaN(v)) return showToast("Lengkapi data"); try { if(editingEmpId) await updateDoc(doc(db, "employees", editingEmpId), { name: n, commissionType: t, commissionValue: v }); else await addDoc(collection(db, "employees"), { name:n, commissionType:t, commissionValue:v }); await fetchAllData(); resetEmployeeForm(); } catch(e) { showToast(e.message); } }
+        function editEmployee(id) { if(!checkRole('owner')) return; const e=appData.employees.find(x=>x.id===id); document.getElementById('emp-name').value=e.name; document.getElementById('emp-comm-type').value=e.commissionType; document.getElementById('emp-comm-value').value=e.commissionValue; editingEmpId=id; document.getElementById('btn-save-emp').innerText="UPDATE"; }
+        function resetEmployeeForm() { document.getElementById('emp-name').value=''; document.getElementById('emp-comm-value').value=''; editingEmpId=null; document.getElementById('btn-save-emp').innerText="TAMBAH"; }
+        async function deleteEmployee(id) { if(!checkRole('owner')) return; if(confirm('Hapus?')) { await deleteDoc(doc(db, "employees", id)); await fetchAllData(); } }
+        function renderEmployeeTable() { const tb=document.querySelector('#employee-table tbody'); tb.innerHTML=''; appData.employees.forEach(e=>{ let c=e.commissionType==='percent'?e.commissionValue+'%':formatRupiah(e.commissionValue); tb.innerHTML+=`<tr><td>${e.name}</td><td>${c}</td><td><button class="btn btn-secondary" onclick="window.editEmployee('${e.id}')">Edit</button> <button class="btn btn-danger" onclick="window.deleteEmployee('${e.id}')">X</button></td></tr>`; }); }
+        function renderEmployeeOptions() { const s=document.getElementById('trx-employee'); s.innerHTML='<option value="">-- Pilih --</option>'; appData.employees.forEach(e=>{ const o=document.createElement('option'); o.value=e.id; o.text=e.name; o.dataset.type=e.commissionType; o.dataset.value=e.commissionValue; s.appendChild(o); }); }
+        function showEmployeeCommInfo() { const s=document.getElementById('trx-employee'); const t=s.options[s.selectedIndex].dataset.type, v=s.options[s.selectedIndex].dataset.value; const h=document.getElementById('emp-comm-hint'); h.innerText = t?t==='percent'?`Komisi: ${v}%`:`Komisi: ${formatRupiah(v)}`:''; }
+        function renderProductOptions() { const s=document.getElementById('trx-product'); s.innerHTML='<option value="">-- Pilih Layanan --</option>'; appData.products.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.text=`${p.name} - ${formatRupiah(p.price)}`; o.dataset.price=p.price; s.appendChild(o); }); }
+
+        async function saveGood() { if(!checkRole('owner')) return; const n=document.getElementById('good-name').value, p=parseInt(document.getElementById('good-price').value), s=parseInt(document.getElementById('good-stock').value); if(!n || isNaN(p) || isNaN(s)) return showToast("Lengkapi data"); try { if(editingGoodId) await updateDoc(doc(db, "goods", editingGoodId), { name: n, price: p, stock: s }); else await addDoc(collection(db, "goods"), { name:n, price:p, stock:s }); await fetchAllData(); resetGoodForm(); } catch(e) { showToast(e.message); } }
+        function editGood(id) { if(!checkRole('owner')) return; const g=appData.goods.find(x=>x.id===id); document.getElementById('good-name').value=g.name; document.getElementById('good-price').value=g.price; document.getElementById('good-stock').value=g.stock; editingGoodId=id; document.getElementById('btn-save-good').innerText="UPDATE"; }
+        function resetGoodForm() { document.getElementById('good-name').value=''; document.getElementById('good-price').value=''; document.getElementById('good-stock').value=''; editingGoodId=null; document.getElementById('btn-save-good').innerText="TAMBAH/UPDATE"; }
+        async function deleteGood(id) { if(!checkRole('owner')) return; if(confirm('Hapus?')) { await deleteDoc(doc(db, "goods", id)); await fetchAllData(); } }
+        function renderGoodTable() { const tb=document.querySelector('#good-table tbody'); tb.innerHTML=''; appData.goods.forEach(g=>tb.innerHTML+=`<tr><td>${g.name}</td><td>${formatRupiah(g.price)}</td><td style="color:${g.stock < 5 ? 'var(--danger)' : 'var(--success)'}">${g.stock}</td><td><button class="btn btn-secondary" onclick="window.editGood('${g.id}')">Edit</button> <button class="btn btn-danger" onclick="window.deleteGood('${g.id}')">X</button></td></tr>`); }
+        function renderGoodOptions() { const s=document.getElementById('trx-good'); s.innerHTML='<option value="">-- Pilih Barang --</option>'; appData.goods.forEach(g=>{ const o=document.createElement('option'); o.value=g.id; o.text=`${g.name} (Stok: ${g.stock})`; o.dataset.price=g.price; o.dataset.stock=g.stock; s.appendChild(o); }); }
+
+        // --- TRANSAKSI ---
+        function toggleTransactionFields() { const type = document.getElementById('trx-type').value; document.getElementById('income-fields').style.display = type === 'income' ? 'block' : 'none'; document.getElementById('expense-fields').style.display = type === 'expense' ? 'block' : 'none'; }
+        function toggleCategoryFields() { const cat = document.getElementById('trx-category').value; document.getElementById('service-specific').style.display = cat === 'service' ? 'block' : 'none'; document.getElementById('good-specific').style.display = cat === 'good' ? 'block' : 'none'; document.getElementById('trx-price').value = ''; document.getElementById('trx-amount').value = ''; }
+        function autoFillPrice() { const s=document.getElementById('trx-product'); const price = s.options[s.selectedIndex].dataset.price || 0; document.getElementById('trx-price').value = price; updateTotalPrice(); }
+        function autoFillPriceGood() { const s=document.getElementById('trx-good'); const stock = s.options[s.selectedIndex].dataset.stock || 0; document.getElementById('stock-display').innerText = stock; const price = s.options[s.selectedIndex].dataset.price || 0; document.getElementById('trx-price').value = price; updateTotalPrice(); }
+        function updateTotalPrice() { const price = parseFloat(document.getElementById('trx-price').value) || 0; const qty = parseFloat(document.getElementById('trx-qty').value) || 1; document.getElementById('trx-amount').value = price * qty; }
+        async function handleTransactionSubmit(e) {
+            e.preventDefault();
+            const type = document.getElementById('trx-type').value, date = document.getElementById('trx-date').value, qty = parseInt(document.getElementById('trx-qty').value) || 1, amount = parseInt(document.getElementById('trx-amount').value);
+            let details = {}, comm = 0;
+            if(type === 'income') {
+                const category = document.getElementById('trx-category').value;
+                if(category === 'service') {
+                    const empId = document.getElementById('trx-employee').value, prodId = document.getElementById('trx-product').value;
+                    if(!empId || !prodId) return showToast("Pilih Karyawan dan Layanan");
+                    const emp = appData.employees.find(x=>x.id===empId);
+                    if(emp) { if(emp.commissionType === 'percent') comm = Math.floor((amount / qty) * (emp.commissionValue/100)) * qty; else comm = emp.commissionValue * qty; }
+                    details = { category: 'service', employeeId: empId, productId: prodId, commission: comm, qty: qty, productName: appData.products.find(p=>p.id===prodId)?.name };
+                } else {
+                    const goodId = document.getElementById('trx-good').value; if(!goodId) return showToast("Pilih Barang");
+                    const good = appData.goods.find(g => g.id === goodId);
+                    if(good.stock < qty) return showToast(`Stok tidak cukup! Tersisa: ${good.stock}`);
+                    const newStock = good.stock - qty; await updateDoc(doc(db, "goods", goodId), { stock: newStock });
+                    details = { category: 'good', goodId: goodId, qty: qty, stockBefore: good.stock, productName: good.name };
+                }
+            } else { const desc = document.getElementById('trx-desc').value; if(!desc) return showToast("Isi keterangan"); details = { description: desc }; }
+            try { if(editingTrxId) { if(!checkRole('owner')) return; await updateDoc(doc(db, "transactions", editingTrxId), { date, type, amount, details }); } else await addDoc(collection(db, "transactions"), { date, type, amount, details }); await fetchAllData(); resetTransactionForm(); } catch(err) { showToast(err.message); }
+        }
+        function editTransaction(id) { if(!checkRole('owner')) return; const t = appData.transactions.find(x => x.id === id); if(!t) return; editingTrxId = id; document.getElementById('trx-date').value = t.date; document.getElementById('trx-type').value = t.type; toggleTransactionFields(); if(t.type === 'income') { const cat = t.details.category || 'service'; document.getElementById('trx-category').value = cat; toggleCategoryFields(); if(cat === 'service') { document.getElementById('trx-employee').value = t.details.employeeId; document.getElementById('trx-product').value = t.details.productId; document.getElementById('trx-qty').value = t.details.qty || 1; document.getElementById('trx-amount').value = t.amount; autoFillPrice(); } else { document.getElementById('trx-good').value = t.details.goodId; document.getElementById('trx-qty').value = t.details.qty || 1; document.getElementById('trx-amount').value = t.amount; autoFillPriceGood(); } } else { document.getElementById('trx-desc').value = t.details.description; document.getElementById('trx-amount').value = t.amount; } document.getElementById('btn-save-trx').innerText = "UPDATE"; document.getElementById('btn-cancel-trx').style.display = 'block'; }
+        function resetTransactionForm() { editingTrxId = null; document.getElementById('trx-date').value = new Date().toISOString().split('T')[0]; document.getElementById('trx-qty').value = 1; document.getElementById('trx-amount').value = ''; document.getElementById('trx-price').value = ''; document.getElementById('trx-desc').value = ''; document.getElementById('trx-category').value = 'service'; toggleCategoryFields(); document.getElementById('btn-save-trx').innerText = "SIMPAN TRANSAKSI"; document.getElementById('btn-cancel-trx').style.display = 'none'; }
+        async function voidTransaction(id) { if(!checkRole('owner')) return; if(!confirm("Batalkan? Stok barang tidak otomatis kembali.")) return; try { const t = appData.transactions.find(x => x.id === id); if(!t) return; const updatedDetails = { ...t.details }; updatedDetails.isVoid = true; if(t.type === 'income') { updatedDetails.originalAmount = t.amount; if(t.details.category === 'service') { updatedDetails.originalCommission = t.details.commission || 0; updatedDetails.commission = 0; updatedDetails.description = `${t.details.productName} (VOID)`; } else { updatedDetails.description = `${t.details.productName} (VOID)`; } } else { updatedDetails.originalAmount = t.amount; updatedDetails.description = `${t.details.description} (VOID)`; } await updateDoc(doc(db, "transactions", id), { amount: 0, details: updatedDetails }); await fetchAllData(); showToast("Dibatalkan"); } catch(err) { showToast(err.message); } }
+        function renderTransactionHistory() { const startInput = document.getElementById('trx-history-start').value, endInput = document.getElementById('trx-history-end').value; let filtered = []; if(!startInput && !endInput) { const today = new Date().toISOString().split('T')[0]; filtered = appData.transactions.filter(t => t.date === today); document.getElementById('trx-history-start').value = today; document.getElementById('trx-history-end').value = today; } else { const start = startInput || '1970-01-01', end = endInput || '2099-12-31'; filtered = appData.transactions.filter(t => t.date >= start && t.date <= end); } const tb = document.querySelector('#today-trx-table tbody'); tb.innerHTML=''; filtered.forEach(t => { const isVoid = t.amount === 0 && (t.details.isVoid || (t.details.description && t.details.description.includes("VOID"))); let info = '-'; if(t.type === 'income') { if(t.details.category === 'good') info = `📦 ${t.details.productName}`; else { const prod = appData.products.find(p=>p.id===t.details.productId)?.name; const emp = appData.employees.find(e=>e.id===t.details.employeeId)?.name || '-'; info = `✂️ ${prod}<br><small>by: ${emp}</small>`; } } else { info = t.details.description; } let qty = (t.type === 'income') ? t.details.qty : '-'; let totalDisplay = isVoid ? "Rp 0 (Void)" : formatRupiah(t.amount); let rowClass = isVoid ? 'voided-row' : ''; let actionBtns = ''; if(userRole === 'owner') { if(!isVoid) actionBtns = `<button class="btn btn-warning" style="font-size:0.7rem;" onclick="window.editTransaction('${t.id}')">Edit</button> <button class="btn btn-danger" style="font-size:0.7rem;" onclick="window.voidTransaction('${t.id}')">Batal</button>`; else actionBtns = `<span class="badge badge-void">Batal</span>`; } tb.innerHTML += `<tr class="${rowClass}"><td><span class="badge ${t.type==='income'?'badge-in':'badge-out'}">${t.type}</span></td><td>${info}</td><td style="text-align:center">${qty}</td><td>${totalDisplay}</td><td>${actionBtns}</td></tr>`; }); }
+        function renderDashboard() { const n=new Date(); const m=appData.transactions.filter(t=>{ const d=new Date(t.date); return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear(); }); document.getElementById('dash-income').innerText = formatRupiah(m.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0)); document.getElementById('dash-expense').innerText = formatRupiah(m.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0)); }
+
+        // --- PAYROLL ---
+        function switchPayrollTab(tab) { document.querySelectorAll('#gaji-karyawan .tab').forEach(t=>t.classList.remove('active')); event.currentTarget.classList.add('active'); document.querySelectorAll('#gaji-karyawan .tab-content').forEach(c=>c.style.display='none'); document.getElementById('tab-pay-'+tab).style.display='block'; if(tab==='history') renderPayrollHistory(); }
+        function calculatePayroll() { if(!checkRole('owner')) return; const start = document.getElementById('pay-start').value, end = document.getElementById('pay-end').value; if(!start || !end) return showToast("Pilih rentang tanggal"); 
+        // FIX: Filter to prevent crash on legacy data and only count active transactions
+        const periodTrx = appData.transactions.filter(t => t.type === 'income' && (t.details?.category === 'service' || !t.details?.category) && t.date >= start && t.date <= end && t.amount > 0); 
+        const empData = {}; periodTrx.forEach(t => { const eid = t.details.employeeId, pid = t.details.productId, prod = appData.products.find(p=>p.id===pid), prodName = prod ? prod.name : 'Unknown', qty = t.details.qty || 1; if(!empData[eid]) empData[eid] = { totalQty:0, totalOmset:0, totalComm:0, details: {} }; empData[eid].totalQty += qty; empData[eid].totalOmset += t.amount; empData[eid].totalComm += t.details.commission; if(!empData[eid].details[prodName]) empData[eid].details[prodName] = 0; empData[eid].details[prodName] += qty; }); lastCalculatedPayroll = []; const tb = document.querySelector('#payroll-table tbody'); tb.innerHTML=''; appData.employees.forEach(e => { if(empData[e.id]) { const d = empData[e.id]; let detailHtml = '<div class="detail-list">'; for(let pName in d.details) { detailHtml += `<div class="detail-item"><span>${pName}</span><span>${d.details[pName]}x</span></div>`; } detailHtml += '</div>'; lastCalculatedPayroll.push({ empId: e.id, empName: e.name, totalQty: d.totalQty, totalOmset: d.totalOmset, totalComm: d.totalComm, detailHtml: detailHtml }); tb.innerHTML += `<tr><td style="font-weight:bold">${e.name}</td><td style="text-align:center">${d.totalQty}</td><td>${formatRupiah(d.totalOmset)}</td><td style="color:var(--primary); font-weight:bold">${formatRupiah(d.totalComm)}</td><td>${detailHtml}</td></tr>`; } }); if(tb.innerHTML === '') tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Tidak ada data layanan.</td></tr>'; }
+        
+        // FIX: Ensure data structure is wrapped correctly and ID is saved explicitly
+        async function savePayrollHistory() { 
+            if(!checkRole('owner')) return; 
+            if(lastCalculatedPayroll.length === 0) return showToast("Hitung gaji dulu."); 
+            
+            const start = document.getElementById('pay-start').value;
+            const end = document.getElementById('pay-end').value;
+            
+            // EXPLICITLY wrap in 'records' array to prevent crash in render
+            const docRef = await addDoc(collection(db, "payrollHistory"), { 
+                periodStart: start, 
+                periodEnd: end, 
+                records: lastCalculatedPayroll, 
+                timestamp: new Date().toLocaleString() 
+            });
+            
+            // CRITICAL FIX: Write ID explicitly to document to ensure consistency
+            await updateDoc(docRef, { id: docRef.id });
+
+            await fetchAllData(); 
+            renderPayrollHistory(); // EXPLICIT CALL to force UI refresh
+            showToast("Gaji Dikunci");
+        }
+        function renderPayrollHistory() { 
+            if(!checkRole('owner')) return; 
+            const tb = document.querySelector('#payroll-history-table tbody'); 
+            tb.innerHTML=''; 
+            
+            // Handle empty state
+            if (appData.payrollHistory.length === 0) {
+                tb.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Belum ada riwayat gaji.</td></tr>';
+                return;
+            }
+
+            appData.payrollHistory.forEach(h => { 
+                // FIX: Safety check for 'records' property
+                if(h.records && Array.isArray(h.records)) {
+                    h.records.forEach(r => { 
+                        // Layout Sama dengan Live Preview: Periode, Nama, Cust, Omset, Gaji, Detail, Aksi
+                        tb.innerHTML += `
+                            <tr>
+                                <td>${h.periodStart} <br><small>${h.periodEnd}</small></td>
+                                <td><b>${r.empName}</b></td>
+                                <td style="text-align:center">${r.totalQty}</td>
+                                <td style="text-align:right">${formatRupiah(r.totalOmset)}</td>
+                                <td style="color:var(--primary); font-weight:bold; text-align:right">${formatRupiah(r.totalComm)}</td>
+                                <td>${r.detailHtml}</td>
+                                <td><button class="btn btn-warning" style="font-size:0.7rem;" onclick="window.editPayrollHistory('${h.id}')">Unlock</button></td>
+                            </tr>
+                        `; 
+                    });
+                }
+            });
+        }
+        async function editPayrollHistory(id) { if(!checkRole('owner')) return; if(confirm('Buka kunci?')) { await deleteDoc(doc(db, "payrollHistory", id)); await fetchAllData(); showToast("Riwayat dihapus"); } }
+
+        // --- REPORT & SETTINGS ---
+        function renderOwnerSettings() {
+            const container = document.getElementById('owner-settings-container');
+            container.innerHTML = '';
+            appData.config.owners.forEach((owner, index) => {
+                const div = document.createElement('div');
+                div.className = 'owner-input-row';
+                div.innerHTML = `
+                    <input type="text" placeholder="Nama Owner" value="${owner.name}" id="owner-name-${index}" style="flex:2">
+                    <input type="number" placeholder="%" value="${owner.share}" id="owner-share-${index}" style="flex:1" oninput="window.updateOwnerTotalPct()">
+                    <button class="btn btn-danger btn-sm" onclick="window.removeOwnerConfig(${index})">X</button>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('conf-business-name').value = appData.config.businessName || "";
+            document.getElementById('brand-name').innerText = appData.config.businessName || "BARBERSHOP MANAGER";
+            document.getElementById('print-business-name').innerText = appData.config.businessName || "LAPORAN KEUANGAN";
+        }
+        function addOwnerConfig() { appData.config.owners.push({ id: Date.now().toString(), name: `Owner ${appData.config.owners.length +1}`, share: 0 }); renderOwnerSettings(); }
+        function removeOwnerConfig(index) { if(confirm("Hapus owner ini?")) { appData.config.owners.splice(index,1); renderOwnerSettings(); } }
+        function updateOwnerTotalPct() { let total = 0; appData.config.owners.forEach((owner, index) => { const input = document.getElementById(`owner-share-${index}`); if(input) total += parseInt(input.value) || 0; }); }
+        function switchReportTab(tab) { document.querySelectorAll('#laporan-keuangan .tab').forEach(t=>t.classList.remove('active')); event.currentTarget.classList.add('active'); document.querySelectorAll('#laporan-keuangan .tab-content').forEach(c=>c.style.display='none'); document.getElementById('tab-'+tab).style.display='block'; if(tab==='history') renderReportHistory(); }
+
+        function generateFinancialReport() {
+            if(!checkRole('owner')) return;
+            const start = document.getElementById('rep-start').value, end = document.getElementById('rep-end').value;
+            if(!start || !end) return showToast("Pilih tanggal");
+            
+            document.getElementById('report-result').style.display = 'block';
+            // Reset Step 2 buttons
+            document.getElementById('final-result').style.display = 'none';
+            document.getElementById('btn-save-lock-report').style.display = 'none';
+            document.getElementById('print-period').innerText = `${start} s/d ${end}`;
+            
+            // FIX: Filter out voided transactions (amount > 0) to prevent data pollution
+            const trxInPeriod = appData.transactions.filter(t => t.date >= start && t.date <= end && t.amount > 0);
+            const incomeTrx = trxInPeriod.filter(t => t.type === 'income');
+            const expenseTrx = trxInPeriod.filter(t => t.type === 'expense');
+            const injectTrx = trxInPeriod.filter(t => t.type === 'modal_in');
+            const savingOutTrx = trxInPeriod.filter(t => t.type === 'saving_out');
+            const savingInTrx = trxInPeriod.filter(t => t.type === 'saving_in');
+            const emergOutTrx = trxInPeriod.filter(t => t.type === 'emergency_saving_out');
+            const emergInTrx = trxInPeriod.filter(t => t.type === 'emergency_saving_in');
+            
+            const totalIncome = incomeTrx.reduce((a,b)=>a+b.amount,0);
+            const totalExpense = expenseTrx.reduce((a,b)=>a+b.amount,0);
+            const totalInject = injectTrx.reduce((a,b)=>a+b.amount,0);
+            const totalSavingsOut = savingOutTrx.reduce((a,b)=>a+b.amount,0);
+            const totalSavingsIn = savingInTrx.reduce((a,b)=>a+b.amount,0);
+            const totalEmergOut = emergOutTrx.reduce((a,b)=>a+b.amount,0);
+            const totalEmergIn = emergInTrx.reduce((a,b)=>a+b.amount,0);
+            
+            let totalSalary = 0; 
+            // FIX: Safe navigation using optional chaining '?'
+            incomeTrx.forEach(t=> { if((t.details.category === 'service' || !t.details.category) && t.details?.commission) totalSalary += t.details.commission; });
+
+            const opProfit = totalIncome - totalExpense - totalSalary;
+
+            // CHANGE: Calculate Cash Opening based on Total Modal Masuk (All Time)
+            // This represents the "Saldo Awal Kas" (Total Modal) from the Dashboard logic
+            const allInjectTrx = appData.transactions.filter(t => t.type === 'modal_in');
+            const totalInjectAllTime = allInjectTrx.reduce((a,b)=>a+b.amount,0);
+            
+            // CHANGE: Cash Movement calculation excludes Injects (because Opening already accounts for Total Inject)
+            const cashMovementInPeriod = totalIncome - totalExpense - totalSalary - totalSavingsOut + totalSavingsIn - totalEmergOut + totalEmergIn;
+
+            const cashOpening = totalInjectAllTime;
+            const cashClosing = cashOpening + cashMovementInPeriod;
+
+            const currentSavings = appData.config.savings;
+            const savingsMovement = totalSavingsOut - totalSavingsIn; 
+            const savingsOpening = currentSavings - savingsMovement;
+            const savingsClosing = savingsOpening + savingsMovement;
+
+            const currentEmerg = appData.config.emergencySavings;
+            const emergMovement = totalEmergOut - totalEmergIn; 
+            const emergOpening = currentEmerg - emergMovement;
+            const emergClosing = emergOpening + emergMovement;
+
+            document.getElementById('rep-cash-open').innerText = formatRupiah(cashOpening);
+            document.getElementById('rep-cash-inject').innerText = formatRupiah(totalInject); // This shows period injection only
+            document.getElementById('rep-income-total').innerText = formatRupiah(totalIncome);
+            document.getElementById('rep-exp-total').innerText = formatRupiah(totalExpense);
+            document.getElementById('rep-salary-total').innerText = formatRupiah(totalSalary);
+            document.getElementById('rep-savings-out').innerText = formatRupiah(totalSavingsOut);
+            document.getElementById('rep-savings-in').innerText = formatRupiah(totalSavingsIn);
+            document.getElementById('rep-emergency-out').innerText = formatRupiah(totalEmergOut);
+            document.getElementById('rep-emergency-in').innerText = formatRupiah(totalEmergIn);
+            document.getElementById('rep-cash-close').innerText = formatRupiah(cashClosing);
+            document.getElementById('rep-sav-open').innerText = formatRupiah(savingsOpening);
+            document.getElementById('rep-sav-deposit').innerText = formatRupiah(totalSavingsOut);
+            document.getElementById('rep-sav-withdraw').innerText = formatRupiah(totalSavingsIn);
+            document.getElementById('rep-sav-close').innerText = formatRupiah(savingsClosing);
+
+            const emergSection = document.getElementById('emergency-report-section');
+            if(totalEmergOut > 0 || totalEmergIn > 0) {
+                emergSection.style.display = 'block';
+                document.getElementById('rep-emerg-open').innerText = formatRupiah(emergOpening);
+                document.getElementById('rep-emerg-deposit').innerText = formatRupiah(totalEmergOut);
+                document.getElementById('rep-emerg-withdraw').innerText = formatRupiah(totalEmergIn);
+                document.getElementById('rep-emerg-close').innerText = formatRupiah(emergClosing);
+            } else {
+                emergSection.style.display = 'none';
+            }
+
+            document.getElementById('pl-gross').innerText = formatRupiah(totalIncome);
+            document.getElementById('pl-exp').innerText = formatRupiah(totalExpense);
+            document.getElementById('pl-salary').innerText = formatRupiah(totalSalary);
+            document.getElementById('pl-net').innerText = formatRupiah(opProfit);
+            document.getElementById('temp-op-profit').innerText = formatRupiah(opProfit);
+
+            const ownerContainer = document.getElementById('owner-shares-list-container');
+            ownerContainer.innerHTML = '';
+            appData.config.owners.forEach((owner, index) => {
+                const div = document.createElement('div');
+                div.className = 'owner-share-item';
+                div.innerHTML = `
+                    <div class="owner-share-info">
+                        <div class="owner-share-label">${owner.name}</div>
+                        <input type="number" value="${owner.share}" id="close-owner-share-${index}" 
+                               onchange="window.updateClosingPreview(${opProfit}, ${totalSavingsOut}, ${totalEmergOut})" style="width:80px; padding:4px; display:inline-block;"> %
+                    </div>
+                    <div class="owner-share-calc" id="close-owner-calc-${index}">Rp 0</div>
+                `;
+                ownerContainer.appendChild(div);
+            });
+            updateClosingPreview(opProfit, totalSavingsOut, totalEmergOut);
+
+            const incTb = document.querySelector('#report-inc-table tbody'); incTb.innerHTML='';
+            incomeTrx.forEach(t => {
+                let name = '-', info = '-';
+                if(t.details.category === 'good') { name = t.details.productName || '-'; info = 'Barang'; }
+                else { name = t.details.productName || '-'; const emp = appData.employees.find(e=>e.id===t.details.employeeId)?.name || '-'; info = `Barber: ${emp}`; }
+                incTb.innerHTML += `<tr><td>${t.date}</td><td>${t.details.category === 'good' ? 'Barang' : 'Layanan'}</td><td>${name}</td><td>${info}</td><td style="text-align:center">${t.details.qty||1}</td><td>${formatRupiah(t.amount)}</td></tr>`;
+            });
+            const expTb = document.querySelector('#report-exp-table tbody'); expTb.innerHTML='';
+            expenseTrx.forEach(t => { expTb.innerHTML += `<tr><td>${t.date}</td><td>${t.details.description}</td><td>${formatRupiah(t.amount)}</td></tr>`; });
+        }
+
+        function updateClosingPreview(netProfit, savingsDeposit, emergencyDeposit) {
+            const distributable = netProfit - savingsDeposit - emergencyDeposit;
+            let totalPct = 0;
+            const shares = [];
+            appData.config.owners.forEach((owner, index) => {
+                const input = document.getElementById(`close-owner-share-${index}`);
+                const display = document.getElementById(`close-owner-calc-${index}`);
+                const pct = parseInt(input ? input.value : 0) || 0;
+                totalPct += pct;
+                const amount = Math.floor(distributable * (pct / 100));
+                if(display) display.innerText = formatRupiah(amount);
+                shares.push({ name: owner.name, pct: pct, amount: amount });
+            });
+            const warningDiv = document.querySelector('.owner-shares-list');
+            if(warningDiv) {
+                if(totalPct !== 100) warningDiv.style.border = "1px solid var(--danger)";
+                else warningDiv.style.border = "1px solid transparent";
+            }
+            return shares;
+        }
+
+        function printReport() {
+            const reportResult = document.getElementById('report-result');
+            if(reportResult.style.display === 'none') return showToast("Buat laporan dulu.");
+            window.print();
+        }
+
+        // --- STEP 1: PROCESS (CALCULATE ONLY) ---
+        async function processClosingMonth() {
+            if(!checkRole('owner')) return;
+            // Validation
+            const sav = parseInt(document.getElementById('input-savings-amount').value)||0;
+            const emerg = parseInt(document.getElementById('input-emergency-amount').value)||0;
+            const rawProfit = document.getElementById('temp-op-profit').innerText;
+            const profit = parseInt(rawProfit.replace(/[^0-9]/g,''))||0;
+            const s=document.getElementById('rep-start').value, e=document.getElementById('rep-end').value;
+            if(!s||!e) throw new Error("Pilih periode");
+            
+            let totalPctCheck = 0;
+            const calculatedShares = updateClosingPreview(profit, sav, emerg);
+            calculatedShares.forEach(sh => totalPctCheck += sh.pct);
+
+            if(totalPctCheck !== 100) throw new Error(`Total persentase harus 100%. Saat ini ${totalPctCheck}%`);
+
+            const finalProfit = profit - sav - emerg;
+            
+            // Calculate Final Cash
+            const currentCashText = document.getElementById('rep-cash-close').innerText;
+            const currentCash = parseInt(currentCashText.replace(/[^0-9]/g,'')) || 0;
+            const finalCash = currentCash - sav - emerg - calculatedShares.reduce((a,b)=>a+b.amount,0);
+            
+            // Store in buffer (DO NOT SAVE TO DB YET)
+            pendingReportData = {
+                start: s, end: e,
+                profit: profit, sav: sav, emerg: emerg, finalProfit: finalProfit,
+                shares: calculatedShares,
+                finalCash: finalCash, // Critical: Store calculated final cash
+                grossIncome: parseInt(document.getElementById('pl-gross').innerText.replace(/[^0-9]/g,'')),
+                expense: parseInt(document.getElementById('pl-exp').innerText.replace(/[^0-9]/g,'')),
+                salary: parseInt(document.getElementById('pl-salary').innerText.replace(/[^0-9]/g,''))
+            };
+            
+            // Show Summary (Visual Only)
+            const finalContainer = document.getElementById('final-result');
+            finalContainer.style.display = 'block';
+            const finalList = document.getElementById('final-shares-display');
+            finalList.innerHTML = '';
+            
+            calculatedShares.forEach(sh => {
+                finalList.innerHTML += `<div class="owner-share-item" style="background:rgba(0,0,0,0.2);">
+                    <div class="owner-share-info">${sh.name} (${sh.pct}%)</div>
+                    <div class="owner-share-calc">${formatRupiah(sh.amount)}</div>
+                </div>`;
+            });
+
+            finalList.innerHTML += `
+                <div style="border-top: 2px dashed var(--border); margin-top: 10px; padding-top: 10px;">
+                    <div class="owner-share-item">
+                        <div class="owner-share-info" style="color:var(--text-muted)">Total Bagi Hasil (Diambil)</div>
+                        <div class="owner-share-calc" style="color:var(--primary)">${formatRupiah(calculatedShares.reduce((a,b)=>a+b.amount,0))}</div>
+                    </div>
+                    <div class="owner-share-item" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border);">
+                        <div class="owner-share-info" style="color:var(--text-main); font-weight:bold;">SISA SALDO KAS</div>
+                        <div class="owner-share-calc" style="color:var(--text-main); font-size:1.2rem;">${formatRupiah(finalCash)}</div>
+                    </div>
+                </div>
+            `;
+            
+            showToast("Laporan Siap Disimpan. Silakan Cek Angka.");
+            document.getElementById('btn-save-lock-report').style.display = 'block';
+        }
+
+        // --- STEP 2: SAVE (LOCK) - AUTO SYNC VERSION ---
+        async function saveClosingMonth() {
+            if(!checkRole('owner')) return;
+            if(!pendingReportData) return showToast("Proses laporan dulu.");
+            
+            showLoading(true, "Menyimpan Data & Sinkronisasi Kas...");
+            try {
+                const sav = pendingReportData.sav || 0;
+                const emerg = pendingReportData.emerg || 0;
+                const calculatedShares = pendingReportData.shares || [];
+
+                // 1. Update Local Config
+                appData.config.savings += sav;
+                appData.config.emergencySavings += emerg;
+                await updateConfigInFirebase();
+
+                // 2. Add Transactions (Saving & Emergency are auto-internal transfers)
+                if(sav > 0) { await addDoc(collection(db, "transactions"), { date:new Date().toISOString().split('T')[0], type:'saving_out', amount: sav, details:{description:'Setor Tabungan (Tutup Buku)'} }); }
+                if(emerg > 0) { await addDoc(collection(db, "transactions"), { date:new Date().toISOString().split('T')[0], type:'emergency_saving_out', amount: emerg, details:{description:'Setor Dana Darurat (Tutup Buku)'} }); }
+                
+                // 3. AUTO-SYNC: Add Transaction for Owner Share Withdrawal (Explicit Expense)
+                const totalOwnerShare = calculatedShares.reduce((a, b) => a + b.amount, 0);
+                if (totalOwnerShare > 0) {
+                    await addDoc(collection(db, "transactions"), { 
+                        date: new Date().toISOString().split('T')[0], 
+                        type: 'expense', // This is withdrawal
+                        amount: totalOwnerShare, 
+                        details: { description: 'Bagi Hasil Owner (Tutup Buku)' } 
+                    });
+                    showToast(`Laporan Terkunci. Rp ${formatRupiah(totalOwnerShare)} otomatis berkurang dari Kas.`);
+                } else {
+                    showToast("Laporan Terkunci. Tidak ada hasil bagi owner.");
+                }
+                
+                // 4. Save Report History
+                const historyRecord = { 
+                    periodStart: pendingReportData.start, 
+                    periodEnd: pendingReportData.end, 
+                    grossIncome: pendingReportData.grossIncome,
+                    expense: pendingReportData.expense,
+                    salary: pendingReportData.salary,
+                    savingsDeposit: sav,
+                    emergencyDeposit: emerg,
+                    netProfit: pendingReportData.finalProfit,
+                    owners: calculatedShares,
+                    cashClose: pendingReportData.finalCash // FIX: Save Final Cash Balance
+                };
+                
+                const docRef = await addDoc(collection(db, "reportHistory"), historyRecord);
+                await updateDoc(docRef, { id: docRef.id });
+
+                await fetchAllData(); // Crucial: Reloads data immediately after save to update Dashboard
+                
+                // 5. Cleanup UI
+                pendingReportData = null;
+                document.getElementById('final-result').style.display = 'none';
+                document.getElementById('btn-save-lock-report').style.display = 'none';
+                document.getElementById('report-result').style.display = 'none';
+
+            } catch (error) {
+                console.error(error);
+                showToast("Gagal Proses: " + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function renderReportHistory() {
+            if(!checkRole('owner')) return;
+            const container = document.getElementById('history-container');
+            container.innerHTML = '';
+            if (appData.reportHistory.length === 0) {
+                container.innerHTML = '<div class="card" style="text-align:center; padding:40px;">Belum ada laporan tersimpan.</div>';
+                return;
+            }
+            appData.reportHistory.forEach(h => {
+                let cardHtml = `
+                    <div class="card report-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 style="font-size:1.1rem; color:var(--primary);">Periode: ${h.periodStart} s/d ${h.periodEnd}</h3>
+                            <button class="btn btn-danger btn-sm" onclick="window.editLockedReport('${h.id}')">🗑️ Buka Kunci</button>
+                        </div>
+                        <div class="grid-2" style="margin-top:10px;">
+                            <div><div class="stat-label">Pendapatan Kotor</div><div>${formatRupiah(h.grossIncome)}</div></div>
+                            <div><div class="stat-label">Pengeluaran</div><div style="color:var(--danger)">${formatRupiah(h.expense)}</div></div>
+                            <div><div class="stat-label">Gaji Karyawan</div><div>${formatRupiah(h.salary)}</div></div>
+                            <div><div class="stat-label">Laba Bersih</div><div style="font-weight:bold; color:var(--success)">${formatRupiah(h.netProfit)}</div></div>
+                        </div>
+                    </div>
+                    <div class="card" style="border-color: var(--success); border-left: 5px solid var(--success);">
+                        <h4 style="color: var(--success); border-bottom: 1px solid #333; padding-bottom:5px; margin-bottom:10px;">Ringkasan Hasil Bagi</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom:15px;">
+                            <div><small style="color:#aaa">Setor Tabungan</small><div><div style="color:var(--savings)">${formatRupiah(h.savingsDeposit)}</div></div>
+                            <div><small style="color:#aaa">Setor Dana Darurat</small><div><div style="color:var(--emergency)">${formatRupiah(h.emergencyDeposit)}</div></div>
+                            <div><small style="color:#aaa">Laba Dibagi</small><div><div style="font-weight:bold;">${formatRupiah(h.netProfit - h.savingsDeposit - h.emergencyDeposit)}</div></div>
+                        </div>
+                        <div class="owner-shares-list">
+                `;
+                if(h.owners && Array.isArray(h.owners)) {
+                    h.owners.forEach(o => {
+                        cardHtml += `<div class="owner-share-item">
+                            <div class="owner-share-info">${o.name} (${o.pct}%)</div>
+                            <div class="owner-share-calc">${formatRupiah(o.amount)}</div>
+                        </div>`;
+                    });
+                }
+                
+                // FIX: Add display for Final Cash Balance (Sisa Saldo Kas)
+                cardHtml += `</div>
+                <div class="report-summary-row total" style="margin-top:10px; border-top:2px solid var(--success); padding-top:10px;">
+                    <span style="color:var(--text-muted)">Sisa Saldo Akhir Kas (Periode Ini)</span>
+                    <span>${formatRupiah(h.cashClose)}</span>
+                </div>
+                </div><hr style="border:0; border-top:1px dashed var(--border); margin: 20px 0;">`;
+                
+                container.innerHTML += cardHtml;
+            });
+        }
+        
+        // FIX: Direct delete using ID from Firestore
+        async function editLockedReport(id) {
+            if(!checkRole('owner')) return;
+            if(confirm('Buka kunci laporan ini?')) {
+                try {
+                    await deleteDoc(doc(db, "reportHistory", id));
+                    await fetchAllData(); 
+                    showToast("Riwayat dihapus");
+                    renderReportHistory(); 
+                } catch(e) {
+                    showToast("Gagal menghapus: " + e.message);
+                }
+            }
+        }
+
+        // --- SETTINGS & UTILS ---
+        async function saveConfig() { 
+            if(!checkRole('owner')) return; 
+            const newOwners = [];
+            appData.config.owners.forEach((owner, index) => {
+                const nameIn = document.getElementById(`owner-name-${index}`);
+                const shareIn = document.getElementById(`owner-share-${index}`);
+                if(nameIn && shareIn) {
+                    newOwners.push({
+                        id: owner.id,
+                        name: nameIn.value,
+                        share: parseInt(shareIn.value) || 0
+                    });
+                }
+            });
+            appData.config.owners = newOwners;
+            appData.config.businessName = document.getElementById('conf-business-name').value || "Barbershop";
+            await updateConfigInFirebase(); 
+            applyConfig(); 
+            showToast("Config Tersimpan"); 
+        }
+        async function updateConfigInFirebase() { await setDoc(doc(db, "config", "main_config"), appData.config); }
+        function applyConfig() {
+            document.getElementById('brand-name').innerText = appData.config.businessName;
+            document.getElementById('conf-business-name').value = appData.config.businessName;
+            document.getElementById('print-business-name').innerText = appData.config.businessName;
+            renderOwnerSettings();
+        }
+        async function manualSavingsTransaction() { 
+            if(!checkRole('owner')) return; 
+            const act = document.getElementById('saving-action-type').value, amt = parseInt(document.getElementById('saving-manual-amount').value); 
+            if(!amt) return showToast("Isi nominal"); 
+            // Note: Dashboard only shows Modal, but we still need to check Real Cash for transaction validation? 
+            // The user said "No connection". But we physically cannot spend money we don't have in the cash box (Real Cash).
+            // However, if Dashboard is only "Modal", we can't rely on it for validation. 
+            // We must calculate Real Cash on the fly for validation if needed.
+            let realCash = 0; appData.transactions.forEach(t => { if(t.type==='income') realCash+=t.amount; if(t.type==='expense') realCash-=t.amount; if(t.type==='modal_in') realCash+=t.amount; if(t.type==='saving_out') realCash-=t.amount; if(t.type==='saving_in') realCash+=t.amount; if(t.type==='emergency_saving_out') realCash-=t.amount; if(t.type==='emergency_saving_in') realCash+=t.amount; }); 
+            if(act==='deposit') { if(amt > realCash) return showToast("Saldo kas fisik kurang"); appData.config.savings+=amt; await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'saving_out', amount:amt, details:{description:'Setor Manual'} }); } 
+            else { if(amt>appData.config.savings) return showToast("Saldo tabungan kurang"); appData.config.savings-=amt; await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'saving_in', amount:amt, details:{description:'Tarik Manual'} }); } 
+            await updateConfigInFirebase(); await fetchAllData(); document.getElementById('saving-manual-amount').value=''; 
+        }
+        async function manualSavingsCorrection() { 
+            if(!checkRole('owner')) return; 
+            const r = prompt("Alasan:"); if(!r) return; 
+            const amt = parseInt(document.getElementById('saving-correction-amount').value); if(!amt) return showToast("Isi nominal"); 
+            appData.config.savings += amt; 
+            await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'saving_correction', amount:amt, details:{description:`KOREKSI: ${r}`} }); 
+            await updateConfigInFirebase(); await fetchAllData(); document.getElementById('saving-correction-amount').value=''; 
+        }
+        async function manualEmergencyTransaction() { 
+            if(!checkRole('owner')) return; 
+            const act = document.getElementById('emergency-action-type').value, amt = parseInt(document.getElementById('emergency-manual-amount').value); 
+            if(!amt) return showToast("Isi nominal"); 
+            let realCash = 0; appData.transactions.forEach(t => { if(t.type==='income') realCash+=t.amount; if(t.type==='expense') realCash-=t.amount; if(t.type==='modal_in') realCash+=t.amount; if(t.type==='saving_out') realCash-=t.amount; if(t.type==='saving_in') realCash+=t.amount; if(t.type==='emergency_saving_out') realCash-=t.amount; if(t.type==='emergency_saving_in') realCash+=t.amount; }); 
+            if(act==='deposit') { if(amt > realCash) return showToast("Saldo kas fisik kurang"); appData.config.emergencySavings+=amt; await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'emergency_saving_out', amount:amt, details:{description:'Setor Dana Darurat Manual'} }); } 
+            else { if(amt>appData.config.emergencySavings) return showToast("Saldo dana darurat kurang"); appData.config.emergencySavings-=amt; await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'emergency_saving_in', amount:amt, details:{description:'Tarik Dana Darurat Manual'} }); } 
+            await updateConfigInFirebase(); await fetchAllData(); document.getElementById('emergency-manual-amount').value=''; 
+        }
+        async function manualEmergencyCorrection() { 
+            if(!checkRole('owner')) return; 
+            const r = prompt("Alasan:"); if(!r) return; 
+            const amt = parseInt(document.getElementById('emergency-correction-amount').value); if(!amt) return showToast("Isi nominal"); 
+            appData.config.emergencySavings += amt; 
+            await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'emergency_saving_correction', amount:amt, details:{description:`KOREKSI DANA DARURAT: ${r}`} }); 
+            await updateConfigInFirebase(); await fetchAllData(); document.getElementById('emergency-correction-amount').value=''; 
+        }
+        async function addCapitalInjection() { if(!checkRole('owner')) return; const d = document.getElementById('inject-date').value, a = document.getElementById('inject-amount').value; if(!d||!a) return showToast("Lengkapi data"); await addDoc(collection(db, "transactions"), { id:Date.now(), date:d, type:'modal_in', amount:parseInt(a), details:{description:'Inject Modal'} }); await fetchAllData(); document.getElementById('inject-amount').value=''; }
+        function backupData() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "backup_barber_" + new Date().toISOString().slice(0,10) + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
+        async function initiateDataReset() {
+            if(!checkRole('owner')) return;
+            const pass = prompt("Password:"); if(!pass) return;
+            try { await reauthenticateWithCredential(currentUser, EmailAuthProvider.credential(currentUser.email, pass)); }
+            catch (e) { showToast("Password Salah"); return; }
+            if(!confirm("HAPUS SEMUA DATA?")) return;
+            if(prompt("Ketik 'HAPUS'") !== "HAPUS") return;
+            await executeDataReset();
+        }
+        async function executeDataReset() {
+            showLoading(true, "Menghapus...");
+            try {
+                const cols = ['transactions', 'products', 'employees', 'goods', 'payrollHistory', 'reportHistory'];
+                for(const col of cols) { const snap = await getDocs(collection(db, col)); await Promise.all(snap.docs.map(d=>deleteDoc(d.ref))); }
+                appData.config = { businessName: "BARBERSHOP BARU", owners: [{id:"1", name:"Owner 1", share:50}, {id:"2", name:"Owner 2", share:50}], savings: 0, emergencySavings: 0 };
+                await updateConfigInFirebase();
+                showToast("RESET OK"); await fetchAllData(); window.location.reload();
+            } catch(e) { showToast(e.message); }
+            finally { showLoading(false); }
+        }
+
+        // --- EXPOSE ---
+        window.handleLogin = handleLogin; window.handleLogout = handleLogout; window.registerNewUser = registerNewUser; window.handleResetPassword = handleResetPassword;
+        window.showSection = showSection; window.toggleTransactionFields = toggleTransactionFields; window.toggleCategoryFields = toggleCategoryFields;
+        window.showEmployeeCommInfo = showEmployeeCommInfo; window.autoFillPrice = autoFillPrice; window.autoFillPriceGood = autoFillPriceGood;
+        window.updateTotalPrice = updateTotalPrice; window.handleTransactionSubmit = handleTransactionSubmit; window.resetTransactionForm = resetTransactionForm;
+        window.editTransaction = editTransaction; window.voidTransaction = voidTransaction; window.renderTransactionHistory = renderTransactionHistory;
+        window.saveProduct = saveProduct; window.resetProductForm = resetProductForm; window.editProduct = editProduct; window.deleteProduct = deleteProduct;
+        window.saveEmployee = saveEmployee; window.resetEmployeeForm = resetEmployeeForm; window.editEmployee = editEmployee; window.deleteEmployee = deleteEmployee;
+        window.saveGood = saveGood; window.resetGoodForm = resetGoodForm; window.editGood = editGood; window.deleteGood = deleteGood;
+        window.switchPayrollTab = switchPayrollTab; window.calculatePayroll = calculatePayroll; window.savePayrollHistory = savePayrollHistory; window.editPayrollHistory = editPayrollHistory;
+        window.switchReportTab = switchReportTab; window.generateFinancialReport = generateFinancialReport; window.updateClosingPreview = updateClosingPreview; window.processClosingMonth = processClosingMonth; window.saveClosingMonth = saveClosingMonth; window.editLockedReport = editLockedReport; window.printReport = printReport;
+        window.saveConfig = saveConfig; window.renderOwnerSettings = renderOwnerSettings; window.addOwnerConfig = addOwnerConfig; window.removeOwnerConfig = removeOwnerConfig; window.updateOwnerTotalPct = updateOwnerTotalPct;
+        window.manualSavingsTransaction = manualSavingsTransaction; window.manualSavingsCorrection = manualSavingsCorrection; 
+        window.manualEmergencyTransaction = manualEmergencyTransaction; window.manualEmergencyCorrection = manualEmergencyCorrection;
+        window.addCapitalInjection = addCapitalInjection;
+        window.backupData = backupData; window.initiateDataReset = initiateDataReset;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('trx-date').value = today; document.getElementById('inject-date').value = today;
+            document.getElementById('trx-history-start').value = today; document.getElementById('trx-history-end').value = today;
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        });
+    </script>
+</body>
+</html>
