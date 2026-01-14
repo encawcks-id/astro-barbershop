@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sim Astrobarbershop V1.1</title>
+    <title>Sim Astrobarbershop V1.2</title>
+    
+    <!-- LIBRARY GRAFIK -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
             --bg-dark: #121212;
@@ -46,6 +50,8 @@
             flex-shrink: 0;     
             height: 100%;
             overflow-y: auto;   
+            transition: transform 0.3s ease-in-out;
+            z-index: 999;
         }
         
         main { 
@@ -68,7 +74,7 @@
         .login-box {
             background: var(--bg-card); padding: 40px; border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 90%; max-width: 400px;
-            border: 1px solid var(--primary); text-align: center;
+            border:1px solid var(--primary); text-align: center;
         }
         .login-box h2 { color: var(--primary); margin-bottom: 20px; }
         .login-box input { margin-bottom: 15px; }
@@ -86,7 +92,7 @@
         h2 { font-weight: 400; border-left: 4px solid var(--primary); padding-left: 15px; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 25px; width: 100%; }
-        .card { background-color: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px; }
+        .card { background-color: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); border:1px solid var(--border); margin-bottom: 20px; }
         .card.danger-zone { border: 2px solid var(--danger); background-color: rgba(255, 82, 82, 0.05); }
         .card.report-card { border-left: 5px solid var(--primary); }
         .card.emergency-card { border-left: 5px solid var(--emergency); }
@@ -101,11 +107,18 @@
 
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; }
+        
+        /* MODIFIKASI INPUT STYLE - FONT STANDARD */
         input, select, textarea { width: 100%; padding: 12px; background-color: #2c2c2c; border: 1px solid var(--border); border-radius: 6px; color: white; font-size: 0.95rem; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+        
+        /* Helper for currency inputs - Standard Font */
+        input.money-input { text-align: right; }
+        
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
 
         button.btn { background-color: var(--primary); color: #000; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 0.9rem; }
-        button.btn:hover { background-color: var(--primary-hover); }
+        button.btn:hover:not(:disabled) { background-color: var(--primary-hover); }
         button.btn-danger { background-color: var(--danger); color: white; }
         button.btn-info { background-color: var(--info); color: white; }
         button.btn-secondary { background-color: #555; color: white; }
@@ -115,14 +128,14 @@
         button.btn-emergency { background-color: var(--emergency); color: white; }
         button.btn-sm { padding: 4px 8px; font-size: 0.8rem; }
         
-        .table-container { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        .table-container { overflow-x: auto; max-height: 500px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom:1px solid var(--border); vertical-align: top; }
         th { background-color: #252525; color: var(--text-muted); font-weight: 600; position: sticky; top: 0; }
         
         tr.voided-row { opacity: 0.5; text-decoration: line-through; background-color: rgba(255, 82, 82, 0.05); }
         
-        .detail-list { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; display: flex; flex-direction: column; gap: 4px; }
+        .detail-list { font-size: 0.85rem; color: var(--text-muted); line-height:1.4; display: flex; flex-direction: column; gap: 4px; }
         .detail-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 2px 0; }
         .detail-item span:last-child { font-weight: bold; color: var(--text-main); }
 
@@ -130,7 +143,6 @@
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Grid Layouts */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
 
@@ -144,6 +156,9 @@
         .badge-in { background-color: rgba(76, 175, 80, 0.2); color: #4caf50; }
         .badge-out { background-color: rgba(255, 82, 82, 0.2); color: #ff5252; }
         .badge-void { background-color: #333; color: #777; border: 1px solid #555; }
+        
+        .badge-paid { background-color: rgba(76, 175, 80, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .badge-unpaid { background-color: rgba(255, 82, 82, 0.2); color: var(--danger); border: 1px solid var(--danger); }
 
         .action-btns { display: flex; gap: 5px; }
         .action-btns button { padding: 4px 8px; font-size: 0.75rem; }
@@ -151,32 +166,149 @@
         .sub-header { font-size: 1rem; color: var(--primary); margin: 15px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
         .report-divider { border-top: 1px dashed #444; margin: 10px 0; }
 
-        /* Report Specific Styling */
-        .report-summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
-        .report-summary-row.total { font-weight: bold; font-size: 1.1rem; color: var(--primary); margin-top: 10px; padding-top: 10px; border-top: 1px solid #444; }
+        /* MODIFIKASI: Underline Style untuk Laporan (Seperti Gambar) */
+        .report-summary-row {
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 8px; 
+            font-size: 0.95rem;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Garis pemisah halus */
+            align-items: baseline;
+        }
+        
+        /* Underline pada text Keterangan dan Nominal */
+        .report-summary-row span {
+            text-decoration: underline;
+            text-decoration-color: rgba(255, 255, 255, 0.2); /* Warna underline tipis */
+            text-underline-offset: 5px;
+        }
+
+        .report-summary-row.total span {
+            text-decoration: underline;
+            text-decoration-color: var(--primary); /* Warna underline emas untuk total */
+            text-underline-offset: 5px;
+        }
+        
+        .report-summary-row.total { 
+            font-weight: bold; 
+            font-size: 1.1rem; 
+            color: var(--primary); 
+            margin-top: 10px; 
+            padding-top: 10px; 
+            border-top: 1px solid #444; 
+        }
         .report-summary-row.negative { color: var(--danger); }
         
-        /* Owner Input List in Settings */
         .owner-input-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
         .owner-input-row input { margin-bottom: 0; }
         .owner-input-row button { flex-shrink: 0; }
 
-        /* Owner List in Closing Book */
         .owner-shares-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; max-height: 200px; overflow-y: auto; }
         .owner-share-item { display: flex; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; }
         .owner-share-info { flex: 1; }
         .owner-share-label { font-size: 0.9rem; color: var(--text-muted); }
         .owner-share-calc { font-size: 1.1rem; font-weight: bold; color: var(--success); }
 
+        /* --- SLIP BAGI HASIL STYLE (V1.7.2) --- */
+        .slip-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; padding-bottom: 2px; }
+        .slip-row.final { border-top: 1px solid var(--primary); margin-top: 8px; padding-top: 8px; font-weight: bold; font-size: 1.1rem; color: var(--success); }
+        .slip-deduction { color: var(--danger); }
+        .slip-card { background: #fff; color: #000; padding: 15px; margin-bottom: 10px; border-radius: 4px; border: 1px dashed #ccc; }
+        
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; color: var(--primary); font-size: 1.5rem; flex-direction: column; gap: 15px; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(212,175,55,0.3); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- MODAL STYLES --- */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 3000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.8); 
+            backdrop-filter: blur(5px);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: var(--bg-card);
+            margin: auto;
+            padding: 30px;
+            border: 1px solid var(--primary);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-lg {
+            max-width: 700px;
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 20px;
+            top: 10px;
+        }
+        .close-modal:hover { color: #fff; }
+
+        /* --- MOBILE RESPONSIVE FIXES --- */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            border-radius:5px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 768px) {
+            aside {
+                position: fixed;
+                left: -280px; 
+                top: 0;
+                bottom: 0;
+                width: 270px;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            }
+            aside.open {
+                left: 0;
+            }
+            main {
+                width: 100%;
+                padding: 60px 15px 15px 15px; 
+            }
+            .mobile-menu-toggle {
+                display: block;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr; 
+            }
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr; 
+            }
+        }
 
         /* PRINT STYLES */
         @media print {
             body { background-color: white; color: black; height: auto; overflow: visible; display: block; font-size: 11pt; -webkit-print-color-adjust: exact; }
             main { padding: 0; margin: 0; width: 100%; overflow: visible; }
-            aside, nav, .no-print, .tabs, .btn, .action-btns, #toast, #loading-overlay, .form-group, .login-screen { display: none !important; }
+            aside, nav, .no-print, .tabs, .btn, .action-btns, #toast, #loading-overlay, .form-group, .login-screen, .mobile-menu-toggle, .no-print-print { display: none !important; }
             .section { display: none !important; }
             #laporan-keuangan { display: block !important; }
             #tab-live { display: block !important; }
@@ -185,7 +317,7 @@
             
             #laporan-keuangan { padding: 20px; }
             .card { 
-                border: 1px solid #ccc; 
+                border:1px solid #ccc; 
                 box-shadow: none; 
                 padding: 15px; 
                 margin-bottom: 20px; 
@@ -215,10 +347,14 @@
             
             input, select { display: none; } 
             
-            /* Print Styles for Owner Shares */
             .owner-shares-list { max-height: none; overflow: visible; }
             .owner-share-item { background: none; border-bottom: 1px solid #eee; padding: 5px 0; }
             .owner-share-calc { color: black; font-weight: bold; }
+            
+            /* Print Slip Style */
+            .slip-card { border: 1px solid #000; color: #000; background: #fff; page-break-inside: avoid; }
+            .slip-deduction { color: #000; }
+            .slip-row.final { color: #000; border-top: 1px solid #000; }
         }
         
         .print-only { display: none; } 
@@ -227,13 +363,16 @@
 </head>
 <body>
 
+    <!-- MOBILE MENU TOGGLE BUTTON -->
+    <button class="mobile-menu-toggle" onclick="document.querySelector('aside').classList.toggle('open')">☰ MENU</button>
+
     <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="login-box">
             <h2>BARBER MANAGER</h2>
             <div class="form-group"><input type="email" id="login-email" placeholder="Email"></div>
             <div class="form-group"><input type="password" id="login-pass" placeholder="Password"></div>
-            <button class="btn" onclick="window.handleLogin()">MASUK</button>
+            <button class="btn" id="btn-login" onclick="window.handleLogin()">MASUK</button>
             <div class="login-links">
                 <a onclick="window.handleResetPassword()">Lupa Password?</a>
             </div>
@@ -281,6 +420,37 @@
                     <h2>Ringkasan Bisnis</h2>
                     <p id="current-date" style="color: var(--text-muted);"></p>
                 </header>
+                
+                <!-- GRAFIK ATAS (FULL WIDTH) -->
+                <div class="card" style="margin-bottom: 20px; padding: 10px 20px; min-height: 160px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h4 style="margin: 0; font-size: 1rem; color:var(--text-muted);">Trend Pendapatan (6 Bulan)</h4>
+                    </div>
+                    <div style="height: 120px; width: 100%;">
+                        <canvas id="chart-income"></canvas>
+                    </div>
+                </div>
+
+                <!-- GRAFIK BAWAH (BERJAJAR) -->
+                <div class="grid-2" style="margin-bottom: 20px;">
+                    <!-- GRAFIK KOMPOSISI -->
+                    <div class="card" style="min-height: 250px; padding: 15px;">
+                        <h4 style="margin-bottom:15px; font-size: 1rem; color:var(--text-muted);">Komposisi Pendapatan</h4>
+                        <div style="height: 180px; position: relative;">
+                            <canvas id="chart-pie"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- GRAFIK TOP BARBER -->
+                    <div class="card" style="min-height: 250px; padding: 15px;">
+                        <h4 style="margin-bottom:15px; font-size: 1rem; color:var(--text-muted);">Top 5 Performer</h4>
+                        <div style="height: 180px; display: flex; justify-content: center;">
+                            <canvas id="chart-barbers" style="max-height: 100%; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARDS STATISTIK -->
                 <div class="stats-grid">
                     <div class="card"><div class="stat-label">Total Modal Masuk</div><div class="stat-value" id="dash-cash">Rp 0</div></div>
                     <div class="card" style="border-color: var(--savings);"><div class="stat-label">Tabungan</div><div class="stat-value" id="dash-savings" style="color: var(--savings)">Rp 0</div></div>
@@ -296,7 +466,7 @@
                 <div class="grid-2">
                     <div class="card">
                         <form id="form-transaction" onsubmit="window.handleTransactionSubmit(event)">
-                            <div class="form-group"><label>Jenis Transaksi</label><select id="trx-type" onchange="window.toggleTransactionFields()"><option value="income">Pendapatan (Omset)</option><option value="expense">Pengeluaran</option></select></div>
+                            <div class="form-group"><label>Jenis Transaksi</label><select id="trx-type" onchange="window.toggleTransactionFields()"><option value="income">Pemasukan (Omset)</option><option value="expense">Pengeluaran</option></select></div>
                             <div class="form-group"><label>Tanggal</label><input type="date" id="trx-date" required></div>
                             
                             <div id="income-fields">
@@ -337,7 +507,7 @@
                                 </div>
                                 
                                 <div class="grid-2" style="gap:10px;">
-                                    <div class="form-group"><label>Harga Satuan</label><input type="number" id="trx-price" readonly style="background:#333; color: #888;"></div>
+                                    <div class="form-group"><label>Harga Satuan</label><input type="number" id="trx-price" readonly style="background:#333; color: #888;" class="money-input"></div>
                                     <div class="form-group"><label>Jumlah</label><input type="number" id="trx-qty" value="1" min="1" oninput="window.updateTotalPrice()"></div>
                                 </div>
                             </div>
@@ -346,7 +516,7 @@
                                 <div class="form-group"><label>Keterangan / Item</label><input type="text" id="trx-desc" placeholder="Contoh: Beli Sabun, Bayar Listrik"></div>
                             </div>
                             
-                            <div class="form-group"><label>Total Nominal (Rp)</label><input type="number" id="trx-amount" min="0" required></div>
+                            <div class="form-group"><label>Total Nominal (Rp)</label><input type="text" id="trx-amount" class="money-input" inputmode="numeric" placeholder="0" required></div>
                             
                             <div class="action-group" style="display:flex; gap:10px;">
                                 <button type="submit" class="btn" id="btn-save-trx" style="flex:1">SIMPAN TRANSAKSI</button>
@@ -358,15 +528,18 @@
                     <div class="card">
                         <h3>Riwayat Transaksi</h3>
                         <div class="grid-2" style="gap:10px; margin-bottom:10px;">
-                            <div class="form-group"><label>Mulai</label><input type="date" id="trx-history-start" onchange="window.renderTransactionHistory()"></div>
-                            <div class="form-group"><label>Selesai</label><input type="date" id="trx-history-end" onchange="window.renderTransactionHistory()"></div>
+                            <div class="form-group"><label>Mulai</label><input type="date" id="trx-history-start" onchange="window.resetTransactionPagination()"></div>
+                            <div class="form-group"><label>Selesai</label><input type="date" id="trx-history-end" onchange="window.resetTransactionPagination()"></div>
                         </div>
                         
                         <div class="table-container">
                             <table id="today-trx-table">
                                 <thead><tr><th>Tipe</th><th>Info</th><th>Jml</th><th>Total</th><th>Aksi</th></tr></thead>
-                                <tbody></tbody>
-                            </table>
+                                <tbody></tbody></table>
+                        </div>
+                        <!-- PAGINATION BUTTON -->
+                        <div style="text-align: center; margin-top: 10px;">
+                            <button class="btn btn-secondary btn-sm" id="btn-load-more-trx" onclick="window.loadMoreTransactions()">MUAT LEBIH BANYAK</button>
                         </div>
                     </div>
                 </div>
@@ -379,7 +552,7 @@
                     <div class="card">
                         <h3>Layanan / Jasa</h3>
                         <div class="form-group"><input type="text" id="prod-name" placeholder="Nama Layanan"></div>
-                        <div class="form-group"><input type="number" id="prod-price" placeholder="Harga Jual (Rp)"></div>
+                        <div class="form-group"><input type="text" id="prod-price" placeholder="Harga Jual (Rp)" class="money-input" inputmode="numeric"></div>
                         <div class="action-group" style="display:flex; gap:10px;">
                             <button class="btn" id="btn-save-prod" onclick="window.saveProduct()">TAMBAH</button>
                             <button class="btn btn-secondary" id="btn-cancel-prod" onclick="window.resetProductForm()" style="display:none;">Batal</button>
@@ -394,7 +567,7 @@
                         <div class="form-group"><input type="text" id="emp-name" placeholder="Nama Karyawan"></div>
                         <div class="grid-2" style="gap:10px;">
                             <div class="form-group"><label>Tipe Komisi</label><select id="emp-comm-type"><option value="percent">Persen (%)</option><option value="nominal">Nominal (Rp)</option></select></div>
-                            <div class="form-group"><label>Nilai</label><input type="number" id="emp-comm-value" placeholder="cth: 20 atau 10000"></div>
+                            <div class="form-group"><label>Nilai</label><input type="text" id="emp-comm-value" placeholder="cth: 20 atau 10000" class="money-input" inputmode="numeric"></div>
                         </div>
                         <div class="action-group" style="display:flex; gap:10px;">
                             <button class="btn" id="btn-save-emp" onclick="window.saveEmployee()">TAMBAH</button>
@@ -408,7 +581,7 @@
                     <div class="card" style="border-top: 3px solid var(--info);">
                         <h3>Stok Barang</h3>
                         <div class="form-group"><input type="text" id="good-name" placeholder="Nama Barang"></div>
-                        <div class="form-group"><input type="number" id="good-price" placeholder="Harga Jual (Rp)"></div>
+                        <div class="form-group"><input type="text" id="good-price" placeholder="Harga Jual (Rp)" class="money-input" inputmode="numeric"></div>
                         <div class="form-group"><input type="number" id="good-stock" placeholder="Stok Awal / Restock"></div>
                         <div class="action-group" style="display:flex; gap:10px;">
                             <button class="btn btn-info" id="btn-save-good" onclick="window.saveGood()">TAMBAH/UPDATE</button>
@@ -423,47 +596,69 @@
 
             <!-- 4. GAJI KARYAWAN -->
             <section id="gaji-karyawan" class="section">
-                <header><h2>Gaji Karyawan</h2></header>
+                <header>
+                    <h2>Gaji Karyawan</h2>
+                    <button class="btn btn-warning btn-sm" onclick="window.openKasBonModal()">💸 INPUT KAS BON</button>
+                </header>
+                
                 <div class="tabs no-print">
                     <div class="tab active" onclick="window.switchPayrollTab('live')">Live Preview</div>
                     <div class="tab" onclick="window.switchPayrollTab('history')">Riwayat (Terkunci)</div>
                 </div>
+                
                 <div id="tab-pay-live" class="tab-content">
                     <div class="card no-print" style="margin-bottom: 20px;">
                         <div class="grid-2">
                             <div class="form-group"><label>Mulai</label><input type="date" id="pay-start"></div>
                             <div class="form-group"><label>Selesai</label><input type="date" id="pay-end"></div>
                         </div>
-                        <div class="action-group" style="display:flex; gap:10px;">
+                        <div class="action-group" style="display:flex; gap:10px; flex-wrap: wrap;">
                             <button class="btn" onclick="window.calculatePayroll()">Hitung Gaji</button>
-                            <button class="btn btn-warning" onclick="window.savePayrollHistory()">Simpan & Kunci Riwayat</button>
+                            <button class="btn btn-warning" id="btn-save-payroll" onclick="window.savePayrollHistory()">Simpan & Kunci Riwayat</button>
                         </div>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">
+                            *Periode yang sudah terkunci tidak dapat dihitung ulang. Kas Bon otomatis dipotong.
+                        </p>
                     </div>
                     <div class="card">
-                        <div class="table-container">
-                            <table id="payroll-table"><thead><tr><th>Nama</th><th>Cust</th><th>Omset</th><th>Gaji</th><th>Detail</th></tr></thead><tbody></tbody></table>
+                        <div class="table-container" style="max-height: 500px;">
+                            <table id="payroll-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 20%">Nama</th>
+                                        <th style="width: 8%; text-align:center">Cust</th>
+                                        <th style="width: 15%; text-align:right">Komisi</th>
+                                        <th style="width: 12%; text-align:right">Bonus</th>
+                                        <th style="width: 15%; text-align:right; color:var(--text-main)">Gaji Kotor</th>
+                                        <th style="width: 12%; text-align:right; color:var(--danger)">Kas Bon</th>
+                                        <th style="width: 13%; text-align:right; color:var(--success); font-weight:bold;">Total Terima</th>
+                                        <th style="width:5%">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+                
                 <div id="tab-pay-history" class="tab-content" style="display:none;">
                     <div class="card">
                         <h3>Riwayat Gaji (Terkunci)</h3>
                         <div class="table-container">
-                            <!-- Tabel History Diperluas agar Sama dengan Live Preview -->
                             <table id="payroll-history-table">
                                 <thead>
                                     <tr>
                                         <th>Periode</th>
                                         <th>Nama</th>
                                         <th style="text-align:center">Cust</th>
-                                        <th style="text-align:right">Omset</th>
                                         <th style="text-align:right">Gaji</th>
-                                        <th>Detail</th>
+                                        <th style="text-align:center">Status</th>
+                                        <th>Tgl Bayar</th>
+                                        <th>Detail & Bon</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody></tbody>
-                            </table>
+                                <tbody></tbody></table>
                         </div>
                     </div>
                 </div>
@@ -474,8 +669,9 @@
                 <header>
                     <h2>Laporan & Tutup Buku</h2>
                     <div class="action-group no-print">
+                        <button class="btn btn-info" onclick="window.exportToExcel()">📊 Export Excel (CSV)</button>
                         <button class="btn btn-print" onclick="window.printReport()">🖨️ Cetak Laporan</button>
-                        <button class="btn btn-info" onclick="window.backupData()">💾 Backup</button>
+                        <button class="btn btn-secondary" onclick="window.backupData()">💾 Backup JSON</button>
                     </div>
                 </header>
                 
@@ -522,7 +718,7 @@
                                 <span id="rep-exp-total" style="color:var(--danger)">Rp 0</span>
                             </div>
                             <div class="report-summary-row">
-                                <span>(-) Gaji Karyawan</span>
+                                <span>(-) Gaji Karyawan (Termasuk Bonus)</span>
                                 <span id="rep-salary-total">Rp 0</span>
                             </div>
                             <div class="report-summary-row">
@@ -616,8 +812,7 @@
                             <div class="table-container" style="max-height:300px;">
                                 <table id="report-inc-table">
                                     <thead><tr><th>Tgl</th><th>Kategori</th><th>Item</th><th>Info Tambahan</th><th>Jml</th><th>Nominal</th></tr></thead>
-                                    <tbody></tbody>
-                                </table>
+                                    <tbody></tbody></table>
                             </div>
                         </div>
 
@@ -625,9 +820,8 @@
                             <h4 class="sub-header">Rincian Pengeluaran</h4>
                             <div class="table-container" style="max-height:300px;">
                                 <table id="report-exp-table">
-                                    <thead><tr><th>Tgl</th><th>Keterangan</th><th>Nominal</th></tr></thead>
-                                    <tbody></tbody>
-                                </table>
+                                    <thead><tr><th>Tgl</th><th>Keterangan</th><th>Nominal</th></thead>
+                                    <tbody></tbody></table>
                             </div>
                         </div>
 
@@ -636,6 +830,7 @@
                             <h3 style="color: var(--savings)">Tutup Buku & Bagi Hasil Owner</h3>
                             <p style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">
                                 Perhitungan Bagi Hasil didasarkan pada <strong>Laba Bersih Dikurangi Tabungan & Dana Darurat</strong>.
+                                <br><strong style="color:var(--primary)">Kasbon Owner akan otomatis dipotong dari Bagi Hasil.</strong>
                             </p>
                             <div class="grid-2">
                                 <div>
@@ -644,8 +839,8 @@
                                 </div>
                                 <div>
                                     <div class="grid-2" style="gap:10px;">
-                                        <div><label>Nominal Setor Tabungan</label><input type="number" id="input-savings-amount" placeholder="Rp 0"></div>
-                                        <div><label style="color:var(--emergency)">Nominal Dana Darurat</label><input type="number" id="input-emergency-amount" placeholder="Rp 0"></div>
+                                        <div><label>Nominal Setor Tabungan</label><input type="text" id="input-savings-amount" class="money-input" inputmode="numeric" placeholder="0"></div>
+                                        <div><label style="color:var(--emergency)">Nominal Dana Darurat</label><input type="text" id="input-emergency-amount" class="money-input" inputmode="numeric" placeholder="0"></div>
                                     </div>
                                 </div>
                             </div>
@@ -661,12 +856,12 @@
                             </div>
                         </div>
 
-                        <!-- FINAL RESULT DISPLAY -->
+                        <!-- FINAL RESULT DISPLAY (SLIP) -->
                         <div id="final-result" style="display:none;">
                             <div class="card" style="border-color: var(--success);">
-                                <h3 style="color: var(--success)">Ringkasan Hasil Bagi & Saldo Kas</h3>
-                                <div class="owner-shares-list" id="final-shares-display">
-                                    <!-- Dynamic Results -->
+                                <h3 style="color: var(--success)">Slip Bagi Hasil & Saldo Kas</h3>
+                                <div id="final-shares-display">
+                                    <!-- Dynamic Results (Slip Cards) will be injected here -->
                                 </div>
                             </div>
                         </div>
@@ -717,23 +912,34 @@
                         <h3>💰 Modal Awal / Inject</h3>
                         <div class="grid-2" style="gap:10px;">
                             <div class="form-group"><input type="date" id="inject-date"></div>
-                            <div class="form-group"><input type="number" id="inject-amount" placeholder="Rp"></div>
+                            <div class="form-group"><input type="text" id="inject-amount" placeholder="Rp" class="money-input" inputmode="numeric"></div>
                         </div>
                         <button class="btn" onclick="window.addCapitalInjection()">Tambah Modal</button>
                     </div>
+
+                    <!-- KASBON OWNER CARD (V1.7.2) -->
+                    <div class="card" style="border-color: var(--primary);">
+                        <h3>💸 Input Kasbon Owner</h3>
+                        <div class="form-group"><label>Pilih Owner</label><select id="kasbon-owner-select"></select></div>
+                        <div class="form-group"><input type="date" id="kasbon-owner-date"></div>
+                        <div class="form-group"><input type="text" id="kasbon-owner-amount" placeholder="Nominal Pinjaman (Rp)" class="money-input" inputmode="numeric"></div>
+                        <div class="form-group"><input type="text" id="kasbon-owner-desc" placeholder="Keterangan (Opsional)"></div>
+                        <button class="btn btn-warning" style="width:100%" onclick="window.saveOwnerKasBon()">SIMPAN KASBON OWNER</button>
+                        <p style="font-size:0.75rem; color:#888; margin-top:5px;">*Kasbon akan otomatis dipotong saat proses Tutup Buku.</p>
+                    </div>
                     
-                    <!-- TABUNGAN CARD (FULL RECOVERY) -->
+                    <!-- TABUNGAN CARD -->
                     <div class="card" style="border-color: var(--savings);">
                         <h3>💎 Tabungan & Koreksi</h3>
                         <div class="grid-2">
                             <div>
                                 <div class="form-group"><label>Aksi</label><select id="saving-action-type"><option value="deposit">Setor</option><option value="withdraw">Tarik</option></select></div>
-                                <div class="form-group"><input type="number" id="saving-manual-amount"></div>
+                                <div class="form-group"><input type="text" id="saving-manual-amount" class="money-input" inputmode="numeric"></div>
                                 <button class="btn btn-info" style="width:100%" onclick="window.manualSavingsTransaction()">Proses</button>
                             </div>
                             <div style="border-left: 1px solid var(--border); padding-left: 20px;">
                                 <h4 style="color: var(--danger)">Koreksi (Admin)</h4>
-                                <div class="form-group"><input type="number" id="saving-correction-amount" placeholder="Nilai (bisa minus)"></div>
+                                <div class="form-group"><input type="text" id="saving-correction-amount" placeholder="Nilai (bisa minus)" class="money-input" inputmode="numeric"></div>
                                 <button class="btn btn-danger" style="width:100%" onclick="window.manualSavingsCorrection()">KOREKSI SALDO</button>
                             </div>
                         </div>
@@ -743,18 +949,18 @@
                         </div>
                     </div>
 
-                    <!-- DANA DARURAT CARD (FULL RECOVERY) -->
+                    <!-- DANA DARURAT CARD -->
                     <div class="card" style="border-color: var(--emergency);">
                         <h3>🚨 Dana Darurat & Koreksi</h3>
                         <div class="grid-2">
                             <div>
                                 <div class="form-group"><label>Aksi</label><select id="emergency-action-type"><option value="deposit">Setor</option><option value="withdraw">Tarik</option></select></div>
-                                <div class="form-group"><input type="number" id="emergency-manual-amount"></div>
+                                <div class="form-group"><input type="text" id="emergency-manual-amount" class="money-input" inputmode="numeric"></div>
                                 <button class="btn btn-emergency" style="width:100%" onclick="window.manualEmergencyTransaction()">Proses</button>
                             </div>
                             <div style="border-left: 1px solid var(--border); padding-left: 20px;">
                                 <h4 style="color: var(--danger)">Koreksi (Admin)</h4>
-                                <div class="form-group"><input type="number" id="emergency-correction-amount" placeholder="Nilai (bisa minus)"></div>
+                                <div class="form-group"><input type="text" id="emergency-correction-amount" placeholder="Nilai (bisa minus)" class="money-input" inputmode="numeric"></div>
                                 <button class="btn btn-danger" style="width:100%" onclick="window.manualEmergencyCorrection()">KOREKSI SALDO</button>
                             </div>
                         </div>
@@ -766,7 +972,7 @@
 
                 </div>
 
-                <!-- ZONA BAHAYA CARD (FULL RECOVERY) -->
+                <!-- ZONA BAHAYA CARD -->
                 <div class="card danger-zone" style="margin-top: 30px; padding: 30px; text-align: center;">
                     <h3 style="color: var(--danger); margin-bottom: 10px;">⚠️ ZONA BAHAYA</h3>
                     <p style="margin-bottom: 20px; font-size: 0.9rem; color: #ccc;">Tindakan ini akan menghapus <strong>SELURUH DATA BISNIS</strong>.</p>
@@ -777,19 +983,70 @@
         </main>
     </div>
 
+    <!-- MODAL INPUT KAS BON KARYAWAN -->
+    <div id="kasbon-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="window.closeKasBonModal()">&times;</span>
+            <h3 style="color: var(--primary); margin-bottom: 20px;">Input Kas Bon Karyawan</h3>
+            <form onsubmit="window.saveKasBon(event)">
+                <div class="form-group">
+                    <label>Karyawan</label>
+                    <select id="kb-employee" required>
+                        <option value="">-- Pilih Karyawan --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tanggal</label>
+                    <input type="date" id="kb-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Nominal Pinjaman (Rp)</label>
+                    <input type="text" id="kb-amount" class="money-input" inputmode="numeric" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Keterangan (Opsional)</label>
+                    <input type="text" id="kb-desc" placeholder="Contoh: Keperluan Mendesak">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" style="flex:1" onclick="window.closeKasBonModal()">Batal</button>
+                    <button type="submit" class="btn" style="flex:1">Simpan Pinjaman</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL GAJI -->
+    <div id="payroll-detail-modal" class="modal">
+        <div class="modal-content modal-lg">
+            <span class="close-modal" onclick="window.closePayrollDetailModal()">&times;</span>
+            <h3 style="color: var(--primary); margin-bottom: 5px;">Detail Rincian Gaji</h3>
+            <div id="payroll-period-display" style="font-size: 0.9rem; color: #888; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px;"></div>
+            
+            <div id="payroll-detail-content" style="font-size: 0.9rem; color: #ccc;"></div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn btn-info" onclick="window.downloadPayrollSlip()">📥 Download Slip Gaji</button>
+            </div>
+        </div>
+    </div>
+
     <div id="loading-overlay">
         <div class="spinner"></div>
         <div id="loading-text">Memproses...</div>
     </div>
 
     <script type="module">
-        // Import Firebase v12.7.0
+        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+        
+        // Added Firestore and Auth imports necessary for the app logic
         import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 
-        // Your web app's Firebase configuration
+        // Your web app's Firebase configuration (UPDATED AS REQUESTED)
         const firebaseConfig = {
           apiKey: "AIzaSyDmJTS6f_3kdAaM97O8HGvQqOBeTL8V8z8",
           authDomain: "laporan-keuangan-8b07a.firebaseapp.com",
@@ -801,6 +1058,7 @@
           measurementId: "G-XSDPZ3GCJ1"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
@@ -819,19 +1077,85 @@
                 emergencySavings: 0
             }
         };
-        // Buffer variable for 2-step process
         let pendingReportData = null; 
         
         let currentUser = null, userRole = 'staff', editingProdId = null, editingEmpId = null, editingGoodId = null, editingTrxId = null, lastCalculatedPayroll = [], creatorEmail = '', creatorPass = '';
+        
+        // Pagination Variables
+        let transactionPage = 1;
+        const itemsPerPage = 50;
 
+        // Chart Instances
+        let chartIncomeInstance = null;
+        let chartPieInstance = null;
+        let chartBarbersInstance = null;
+
+        // --- HELPER FUNCTIONS ---
+        
+        // Helper untuk parsing input uang (remove titik, jadi integer)
+        function getVal(id) {
+            const el = document.getElementById(id);
+            if(!el) return 0;
+            return parseInt((el.value || '0').replace(/\./g, '')) || 0;
+        }
+
+        // Helper format Rupiah untuk display
+        function formatRupiah(n) { return 'Rp ' + parseInt(n || 0).toLocaleString('id-ID'); }
+        function showToast(msg) { const x = document.getElementById("toast"); x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000); }
+        function showLoading(show, text="Memproses...") { const el = document.getElementById('loading-overlay'); document.getElementById('loading-text').innerText = text; el.style.display = show ? 'flex' : 'none'; }
+        function checkRole(roleNeeded = 'owner') { if (userRole !== roleNeeded) { showToast(`Akses Ditolak: Hanya ${roleNeeded === 'owner' ? 'Owner' : 'Staff'} yang boleh.`); return false; } return true; }
+        
+        // MODIFIKASI: Format Input Otomatis (410000 -> 410.000)
+        function setupCurrencyInputs() {
+            const inputs = document.querySelectorAll('.money-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', (e) => {
+                    let val = e.target.value.replace(/\D/g, ''); // Hapus semua non-digit
+                    if (val) {
+                        e.target.value = val.replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Tambah titik ribuan
+                    } else {
+                        e.target.value = "";
+                    }
+                });
+            });
+        }
+
+        function showSection(id) { 
+            if((id === 'master-data' || id === 'gaji-karyawan' || id === 'laporan-keuangan' || id === 'pengaturan' || id === 'dashboard') && !checkRole('owner')) return; 
+            
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); 
+            document.getElementById(id).classList.add('active'); 
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
+            
+            if(window.innerWidth <= 768) {
+                document.querySelector('aside').classList.remove('open');
+            }
+            
+            if(window.event) {
+                window.event.currentTarget.classList.add('active');
+            } else {
+                const btn = document.querySelector(`button[onclick*="showSection('${id}')"]`);
+                if(btn) btn.classList.add('active');
+            }
+        }
+        
         // --- AUTH ---
         async function handleLogin() {
+            const btn = document.getElementById('btn-login');
+            const originalText = btn.innerText;
             const email = document.getElementById('login-email').value, pass = document.getElementById('login-pass').value;
             if(!email || !pass) return showToast("Email dan Password wajib diisi");
+            
             try {
+                btn.innerText = "MEMPROSES...";
+                btn.disabled = true;
                 await signInWithEmailAndPassword(auth, email, pass);
                 creatorEmail = email; creatorPass = pass;
             } catch (error) { showToast("Login Gagal: " + error.message); }
+            finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
         async function handleLogout() { creatorEmail = ''; creatorPass = ''; await signOut(auth); }
         async function registerNewUser() {
@@ -878,23 +1202,17 @@
         function applyRoleRestrictions() {
             const ownerMenu = document.querySelector('.owner-menu');
             const staffMenu = document.querySelector('.staff-menu');
-            // Select all main nav buttons to hide Dashboard if needed
             const navBtns = document.querySelectorAll('.nav-btn'); 
             
             if (userRole === 'owner') {
                 ownerMenu.classList.remove('hidden');
                 staffMenu.classList.add('hidden');
-                // Ensure Dashboard button is visible (index 0)
                 if(navBtns[0]) navBtns[0].style.display = 'flex'; 
             } else {
-                // Staff Logic
                 ownerMenu.classList.add('hidden');
-                staffMenu.classList.add('hidden'); // Hide staff menu container
-                
-                // Hide Dashboard button (Index 0)
+                staffMenu.classList.add('hidden'); 
                 if(navBtns[0]) navBtns[0].style.display = 'none';
 
-                // Redirect to Transaksi automatically if not already there
                 const activeSection = document.querySelector('.section.active');
                 if (!activeSection || activeSection.id !== 'transaksi') {
                     showSection('transaksi');
@@ -933,7 +1251,6 @@
                 const trxSnap = await getDocs(query(collection(db, "transactions"), orderBy("date", "desc")));
                 appData.transactions = trxSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 
-                // FIX REPORT & PAYROLL: Use Firestore ID (d.id) primarily, fallback to data.id
                 const paySnap = await getDocs(query(collection(db, "payrollHistory"), orderBy("id", "desc")));
                 appData.payrollHistory = paySnap.docs.map(d => {
                     const data = d.data();
@@ -947,50 +1264,34 @@
                 });
 
                 applyConfig(); refreshAllUI();
-            } catch (error) { console.error(error); showToast("Error Loading Data"); }
-        }
-        function formatRupiah(n) { return 'Rp ' + parseInt(n || 0).toLocaleString('id-ID'); }
-        function showToast(msg) { const x = document.getElementById("toast"); x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000); }
-        function showLoading(show, text="Memproses...") { const el = document.getElementById('loading-overlay'); document.getElementById('loading-text').innerText = text; el.style.display = show ? 'flex' : 'none'; }
-        function checkRole(roleNeeded = 'owner') { if (userRole !== roleNeeded) { showToast(`Akses Ditolak: Hanya ${roleNeeded === 'owner' ? 'Owner' : 'Staff'} yang boleh.`); return false; } return true; }
-        function showSection(id) { 
-            // Updated Logic: Include 'dashboard' in restriction list
-            if((id === 'master-data' || id === 'gaji-karyawan' || id === 'laporan-keuangan' || id === 'pengaturan' || id === 'dashboard') && !checkRole('owner')) return; 
-            
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); 
-            document.getElementById(id).classList.add('active'); 
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
-            
-            // FIX: Safe navigation for programmatically called functions
-            if(window.event) {
-                window.event.currentTarget.classList.add('active');
-            } else {
-                // If called programmatically, try to find button by ID or text
-                const btn = document.querySelector(`button[onclick*="showSection('${id}')"]`);
-                if(btn) btn.classList.add('active');
+            } catch (error) { 
+                console.error(error); 
+                showToast("Error Loading Data"); 
+            } finally {
+                showLoading(false); 
             }
         }
+
         function refreshAllUI() {
             renderProductOptions(); renderProductTable(); 
             renderEmployeeOptions(); renderEmployeeTable();
             renderGoodOptions(); renderGoodTable();
             renderDashboard(); renderTransactionHistory(); updateBalances();
             renderOwnerSettings(); 
+            renderOwnerKasbonSelect(); 
+            setupCurrencyInputs(); // Init input formatting
         }
 
-        // --- UPDATE BALANCES LOGIC (SEPARATED) ---
+        // --- UPDATE BALANCES LOGIC ---
         function updateBalances() {
-            // 1. Hitung Total Modal Masuk (Dashboard Only)
-            // User request: Dashboard hanya menampilkan Total Modal Masuk
+            // 1. Hitung Total Modal Masuk
             let totalModal = 0; 
             appData.transactions.forEach(t => {
                 if (t.type === 'modal_in') totalModal += t.amount; 
             });
-
-            // 2. Update UI Dashboard (Label "Total Modal Masuk")
             document.getElementById('dash-cash').innerText = formatRupiah(totalModal);
 
-            // 3. Update UI Tabungan & Darurat (Dari Config)
+            // 2. Update UI Tabungan & Darurat
             document.getElementById('dash-savings').innerText = formatRupiah(appData.config.savings);
             document.getElementById('dash-emergency').innerText = formatRupiah(appData.config.emergencySavings);
             document.getElementById('settings-savings-balance').innerText = formatRupiah(appData.config.savings);
@@ -998,22 +1299,83 @@
         }
 
         // --- MASTER DATA ---
-        async function saveProduct() { if(!checkRole('owner')) return; const n=document.getElementById('prod-name').value, p=parseInt(document.getElementById('prod-price').value); if(!n||!p) return showToast("Lengkapi data"); try { if(editingProdId) await updateDoc(doc(db, "products", editingProdId), { name: n, price: p }); else await addDoc(collection(db, "products"), { name:n, price:p }); await fetchAllData(); resetProductForm(); } catch(e) { showToast(e.message); } }
-        function editProduct(id) { if(!checkRole('owner')) return; const p=appData.products.find(x=>x.id===id); document.getElementById('prod-name').value=p.name; document.getElementById('prod-price').value=p.price; editingProdId=id; document.getElementById('btn-save-prod').innerText="UPDATE"; }
+        async function saveProduct() { 
+            if(!checkRole('owner')) return; 
+            const btn = document.getElementById('btn-save-prod');
+            const originalText = btn.innerText;
+            const n=document.getElementById('prod-name').value, p=getVal('prod-price'); 
+            if(!n||!p) return showToast("Lengkapi data"); 
+            
+            try { 
+                btn.innerText = "MENYIMPAN...";
+                btn.disabled = true;
+                if(editingProdId) await updateDoc(doc(db, "products", editingProdId), { name: n, price: p }); else await addDoc(collection(db, "products"), { name:n, price:p }); 
+                await fetchAllData(); resetProductForm(); 
+            } catch(e) { showToast(e.message); }
+            finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+        function editProduct(id) { if(!checkRole('owner')) return; const p=appData.products.find(x=>x.id===id); document.getElementById('prod-name').value=p.name; document.getElementById('prod-price').value = p.price; editingProdId=id; document.getElementById('btn-save-prod').innerText="UPDATE"; }
         function resetProductForm() { document.getElementById('prod-name').value=''; document.getElementById('prod-price').value=''; editingProdId=null; document.getElementById('btn-save-prod').innerText="TAMBAH"; }
         async function deleteProduct(id) { if(!checkRole('owner')) return; if(confirm('Hapus?')) { await deleteDoc(doc(db, "products", id)); await fetchAllData(); } }
         function renderProductTable() { const tb=document.querySelector('#product-table tbody'); tb.innerHTML=''; appData.products.forEach(p=>tb.innerHTML+=`<tr><td>${p.name}</td><td>${formatRupiah(p.price)}</td><td><button class="btn btn-secondary" onclick="window.editProduct('${p.id}')">Edit</button> <button class="btn btn-danger" onclick="window.deleteProduct('${p.id}')">X</button></td></tr>`); }
 
-        async function saveEmployee() { if(!checkRole('owner')) return; const n=document.getElementById('emp-name').value, t=document.getElementById('emp-comm-type').value, v=parseFloat(document.getElementById('emp-comm-value').value); if(!n||isNaN(v)) return showToast("Lengkapi data"); try { if(editingEmpId) await updateDoc(doc(db, "employees", editingEmpId), { name: n, commissionType: t, commissionValue: v }); else await addDoc(collection(db, "employees"), { name:n, commissionType:t, commissionValue:v }); await fetchAllData(); resetEmployeeForm(); } catch(e) { showToast(e.message); } }
+        async function saveEmployee() { 
+            if(!checkRole('owner')) return; 
+            const btn = document.getElementById('btn-save-emp');
+            const originalText = btn.innerText;
+            const n=document.getElementById('emp-name').value, t=document.getElementById('emp-comm-type').value, v=getVal('emp-comm-value'); 
+            if(!n||isNaN(v)) return showToast("Lengkapi data"); 
+            
+            try { 
+                btn.innerText = "MENYIMPAN...";
+                btn.disabled = true;
+                if(editingEmpId) await updateDoc(doc(db, "employees", editingEmpId), { name: n, commissionType: t, commissionValue: v }); else await addDoc(collection(db, "employees"), { name:n, commissionType:t, commissionValue:v }); 
+                await fetchAllData(); resetEmployeeForm(); 
+            } catch(e) { showToast(e.message); }
+            finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
         function editEmployee(id) { if(!checkRole('owner')) return; const e=appData.employees.find(x=>x.id===id); document.getElementById('emp-name').value=e.name; document.getElementById('emp-comm-type').value=e.commissionType; document.getElementById('emp-comm-value').value=e.commissionValue; editingEmpId=id; document.getElementById('btn-save-emp').innerText="UPDATE"; }
         function resetEmployeeForm() { document.getElementById('emp-name').value=''; document.getElementById('emp-comm-value').value=''; editingEmpId=null; document.getElementById('btn-save-emp').innerText="TAMBAH"; }
         async function deleteEmployee(id) { if(!checkRole('owner')) return; if(confirm('Hapus?')) { await deleteDoc(doc(db, "employees", id)); await fetchAllData(); } }
         function renderEmployeeTable() { const tb=document.querySelector('#employee-table tbody'); tb.innerHTML=''; appData.employees.forEach(e=>{ let c=e.commissionType==='percent'?e.commissionValue+'%':formatRupiah(e.commissionValue); tb.innerHTML+=`<tr><td>${e.name}</td><td>${c}</td><td><button class="btn btn-secondary" onclick="window.editEmployee('${e.id}')">Edit</button> <button class="btn btn-danger" onclick="window.deleteEmployee('${e.id}')">X</button></td></tr>`; }); }
-        function renderEmployeeOptions() { const s=document.getElementById('trx-employee'); s.innerHTML='<option value="">-- Pilih --</option>'; appData.employees.forEach(e=>{ const o=document.createElement('option'); o.value=e.id; o.text=e.name; o.dataset.type=e.commissionType; o.dataset.value=e.commissionValue; s.appendChild(o); }); }
+        function renderEmployeeOptions() { 
+            const s=document.getElementById('trx-employee'); 
+            s.innerHTML='<option value="">-- Pilih --</option>'; 
+            appData.employees.forEach(e=>{ const o=document.createElement('option'); o.value=e.id; o.text=e.name; o.dataset.type=e.commissionType; o.dataset.value=e.commissionValue; s.appendChild(o); }); 
+            
+            const kb = document.getElementById('kb-employee');
+            if(kb) {
+                kb.innerHTML='<option value="">-- Pilih Karyawan --</option>'; 
+                appData.employees.forEach(e=>{ const o=document.createElement('option'); o.value=e.id; o.text=e.name; kb.appendChild(o); });
+            }
+        }
         function showEmployeeCommInfo() { const s=document.getElementById('trx-employee'); const t=s.options[s.selectedIndex].dataset.type, v=s.options[s.selectedIndex].dataset.value; const h=document.getElementById('emp-comm-hint'); h.innerText = t?t==='percent'?`Komisi: ${v}%`:`Komisi: ${formatRupiah(v)}`:''; }
         function renderProductOptions() { const s=document.getElementById('trx-product'); s.innerHTML='<option value="">-- Pilih Layanan --</option>'; appData.products.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.text=`${p.name} - ${formatRupiah(p.price)}`; o.dataset.price=p.price; s.appendChild(o); }); }
 
-        async function saveGood() { if(!checkRole('owner')) return; const n=document.getElementById('good-name').value, p=parseInt(document.getElementById('good-price').value), s=parseInt(document.getElementById('good-stock').value); if(!n || isNaN(p) || isNaN(s)) return showToast("Lengkapi data"); try { if(editingGoodId) await updateDoc(doc(db, "goods", editingGoodId), { name: n, price: p, stock: s }); else await addDoc(collection(db, "goods"), { name:n, price:p, stock:s }); await fetchAllData(); resetGoodForm(); } catch(e) { showToast(e.message); } }
+        async function saveGood() { 
+            if(!checkRole('owner')) return; 
+            const btn = document.getElementById('btn-save-good');
+            const originalText = btn.innerText;
+            const n=document.getElementById('good-name').value, p=getVal('good-price'), s=parseInt(document.getElementById('good-stock').value); 
+            if(!n || isNaN(p) || isNaN(s)) return showToast("Lengkapi data"); 
+            
+            try { 
+                btn.innerText = "MENYIMPAN...";
+                btn.disabled = true;
+                if(editingGoodId) await updateDoc(doc(db, "goods", editingGoodId), { name: n, price: p, stock: s }); else await addDoc(collection(db, "goods"), { name:n, price:p, stock:s }); 
+                await fetchAllData(); resetGoodForm(); 
+            } catch(e) { showToast(e.message); }
+            finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
         function editGood(id) { if(!checkRole('owner')) return; const g=appData.goods.find(x=>x.id===id); document.getElementById('good-name').value=g.name; document.getElementById('good-price').value=g.price; document.getElementById('good-stock').value=g.stock; editingGoodId=id; document.getElementById('btn-save-good').innerText="UPDATE"; }
         function resetGoodForm() { document.getElementById('good-name').value=''; document.getElementById('good-price').value=''; document.getElementById('good-stock').value=''; editingGoodId=null; document.getElementById('btn-save-good').innerText="TAMBAH/UPDATE"; }
         async function deleteGood(id) { if(!checkRole('owner')) return; if(confirm('Hapus?')) { await deleteDoc(doc(db, "goods", id)); await fetchAllData(); } }
@@ -1025,10 +1387,13 @@
         function toggleCategoryFields() { const cat = document.getElementById('trx-category').value; document.getElementById('service-specific').style.display = cat === 'service' ? 'block' : 'none'; document.getElementById('good-specific').style.display = cat === 'good' ? 'block' : 'none'; document.getElementById('trx-price').value = ''; document.getElementById('trx-amount').value = ''; }
         function autoFillPrice() { const s=document.getElementById('trx-product'); const price = s.options[s.selectedIndex].dataset.price || 0; document.getElementById('trx-price').value = price; updateTotalPrice(); }
         function autoFillPriceGood() { const s=document.getElementById('trx-good'); const stock = s.options[s.selectedIndex].dataset.stock || 0; document.getElementById('stock-display').innerText = stock; const price = s.options[s.selectedIndex].dataset.price || 0; document.getElementById('trx-price').value = price; updateTotalPrice(); }
-        function updateTotalPrice() { const price = parseFloat(document.getElementById('trx-price').value) || 0; const qty = parseFloat(document.getElementById('trx-qty').value) || 1; document.getElementById('trx-amount').value = price * qty; }
+        function updateTotalPrice() { const price = parseInt(document.getElementById('trx-price').value) || 0; const qty = parseFloat(document.getElementById('trx-qty').value) || 1; document.getElementById('trx-amount').value = (price * qty).toLocaleString('id-ID'); }
+        
         async function handleTransactionSubmit(e) {
             e.preventDefault();
-            const type = document.getElementById('trx-type').value, date = document.getElementById('trx-date').value, qty = parseInt(document.getElementById('trx-qty').value) || 1, amount = parseInt(document.getElementById('trx-amount').value);
+            const btn = document.getElementById('btn-save-trx');
+            const originalText = btn.innerText;
+            const type = document.getElementById('trx-type').value, date = document.getElementById('trx-date').value, qty = parseInt(document.getElementById('trx-qty').value) || 1, amount = getVal('trx-amount'); 
             let details = {}, comm = 0;
             if(type === 'income') {
                 const category = document.getElementById('trx-category').value;
@@ -1046,22 +1411,339 @@
                     details = { category: 'good', goodId: goodId, qty: qty, stockBefore: good.stock, productName: good.name };
                 }
             } else { const desc = document.getElementById('trx-desc').value; if(!desc) return showToast("Isi keterangan"); details = { description: desc }; }
-            try { if(editingTrxId) { if(!checkRole('owner')) return; await updateDoc(doc(db, "transactions", editingTrxId), { date, type, amount, details }); } else await addDoc(collection(db, "transactions"), { date, type, amount, details }); await fetchAllData(); resetTransactionForm(); } catch(err) { showToast(err.message); }
+            
+            try { 
+                btn.innerText = "MENYIMPAN...";
+                btn.disabled = true;
+                if(editingTrxId) { if(!checkRole('owner')) return; await updateDoc(doc(db, "transactions", editingTrxId), { date, type, amount, details }); } else await addDoc(collection(db, "transactions"), { date, type, amount, details }); 
+                await fetchAllData(); resetTransactionForm(); 
+            } catch(err) { showToast(err.message); }
+            finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
         function editTransaction(id) { if(!checkRole('owner')) return; const t = appData.transactions.find(x => x.id === id); if(!t) return; editingTrxId = id; document.getElementById('trx-date').value = t.date; document.getElementById('trx-type').value = t.type; toggleTransactionFields(); if(t.type === 'income') { const cat = t.details.category || 'service'; document.getElementById('trx-category').value = cat; toggleCategoryFields(); if(cat === 'service') { document.getElementById('trx-employee').value = t.details.employeeId; document.getElementById('trx-product').value = t.details.productId; document.getElementById('trx-qty').value = t.details.qty || 1; document.getElementById('trx-amount').value = t.amount; autoFillPrice(); } else { document.getElementById('trx-good').value = t.details.goodId; document.getElementById('trx-qty').value = t.details.qty || 1; document.getElementById('trx-amount').value = t.amount; autoFillPriceGood(); } } else { document.getElementById('trx-desc').value = t.details.description; document.getElementById('trx-amount').value = t.amount; } document.getElementById('btn-save-trx').innerText = "UPDATE"; document.getElementById('btn-cancel-trx').style.display = 'block'; }
         function resetTransactionForm() { editingTrxId = null; document.getElementById('trx-date').value = new Date().toISOString().split('T')[0]; document.getElementById('trx-qty').value = 1; document.getElementById('trx-amount').value = ''; document.getElementById('trx-price').value = ''; document.getElementById('trx-desc').value = ''; document.getElementById('trx-category').value = 'service'; toggleCategoryFields(); document.getElementById('btn-save-trx').innerText = "SIMPAN TRANSAKSI"; document.getElementById('btn-cancel-trx').style.display = 'none'; }
-        async function voidTransaction(id) { if(!checkRole('owner')) return; if(!confirm("Batalkan? Stok barang tidak otomatis kembali.")) return; try { const t = appData.transactions.find(x => x.id === id); if(!t) return; const updatedDetails = { ...t.details }; updatedDetails.isVoid = true; if(t.type === 'income') { updatedDetails.originalAmount = t.amount; if(t.details.category === 'service') { updatedDetails.originalCommission = t.details.commission || 0; updatedDetails.commission = 0; updatedDetails.description = `${t.details.productName} (VOID)`; } else { updatedDetails.description = `${t.details.productName} (VOID)`; } } else { updatedDetails.originalAmount = t.amount; updatedDetails.description = `${t.details.description} (VOID)`; } await updateDoc(doc(db, "transactions", id), { amount: 0, details: updatedDetails }); await fetchAllData(); showToast("Dibatalkan"); } catch(err) { showToast(err.message); } }
-        function renderTransactionHistory() { const startInput = document.getElementById('trx-history-start').value, endInput = document.getElementById('trx-history-end').value; let filtered = []; if(!startInput && !endInput) { const today = new Date().toISOString().split('T')[0]; filtered = appData.transactions.filter(t => t.date === today); document.getElementById('trx-history-start').value = today; document.getElementById('trx-history-end').value = today; } else { const start = startInput || '1970-01-01', end = endInput || '2099-12-31'; filtered = appData.transactions.filter(t => t.date >= start && t.date <= end); } const tb = document.querySelector('#today-trx-table tbody'); tb.innerHTML=''; filtered.forEach(t => { const isVoid = t.amount === 0 && (t.details.isVoid || (t.details.description && t.details.description.includes("VOID"))); let info = '-'; if(t.type === 'income') { if(t.details.category === 'good') info = `📦 ${t.details.productName}`; else { const prod = appData.products.find(p=>p.id===t.details.productId)?.name; const emp = appData.employees.find(e=>e.id===t.details.employeeId)?.name || '-'; info = `✂️ ${prod}<br><small>by: ${emp}</small>`; } } else { info = t.details.description; } let qty = (t.type === 'income') ? t.details.qty : '-'; let totalDisplay = isVoid ? "Rp 0 (Void)" : formatRupiah(t.amount); let rowClass = isVoid ? 'voided-row' : ''; let actionBtns = ''; if(userRole === 'owner') { if(!isVoid) actionBtns = `<button class="btn btn-warning" style="font-size:0.7rem;" onclick="window.editTransaction('${t.id}')">Edit</button> <button class="btn btn-danger" style="font-size:0.7rem;" onclick="window.voidTransaction('${t.id}')">Batal</button>`; else actionBtns = `<span class="badge badge-void">Batal</span>`; } tb.innerHTML += `<tr class="${rowClass}"><td><span class="badge ${t.type==='income'?'badge-in':'badge-out'}">${t.type}</span></td><td>${info}</td><td style="text-align:center">${qty}</td><td>${totalDisplay}</td><td>${actionBtns}</td></tr>`; }); }
-        function renderDashboard() { const n=new Date(); const m=appData.transactions.filter(t=>{ const d=new Date(t.date); return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear(); }); document.getElementById('dash-income').innerText = formatRupiah(m.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0)); document.getElementById('dash-expense').innerText = formatRupiah(m.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0)); }
+        async function voidTransaction(id) { 
+            if(!checkRole('owner')) return; 
+            if(!confirm("Batalkan transaksi ini?")) return; 
+            
+            const t = appData.transactions.find(x => x.id === id); 
+            if(!t) return; 
+            
+            if (t.type === 'income' && t.details.category === 'good' && t.details.goodId && !t.details.isVoid) {
+                const good = appData.goods.find(g => g.id === t.details.goodId);
+                if (good) {
+                    const qty = t.details.qty ||1;
+                    await updateDoc(doc(db, "goods", good.id), { stock: good.stock + qty });
+                }
+            }
+
+            try { 
+                const updatedDetails = { ...t.details }; 
+                updatedDetails.isVoid = true; 
+                if(t.type === 'income') { 
+                    updatedDetails.originalAmount = t.amount; 
+                    if(t.details.category === 'service') { 
+                        updatedDetails.originalCommission = t.details.commission || 0; 
+                        updatedDetails.commission = 0; 
+                        updatedDetails.description = `${t.details.productName} (VOID)`; 
+                    } else { 
+                        updatedDetails.description = `${t.details.productName} (VOID)`; 
+                    } 
+                } else { 
+                    updatedDetails.originalAmount = t.amount; 
+                    updatedDetails.description = `${t.details.description} (VOID)`; 
+                } 
+                await updateDoc(doc(db, "transactions", id), { amount: 0, details: updatedDetails }); 
+                await fetchAllData(); 
+                showToast("Transaksi dibatalkan & Stok dikembalikan"); 
+            } catch(err) { showToast(err.message); } 
+        }
+        
+        function resetTransactionPagination() {
+            transactionPage = 1;
+            document.getElementById('btn-load-more-trx').style.display = 'block';
+            renderTransactionHistory();
+        }
+        function loadMoreTransactions() {
+            transactionPage++;
+            renderTransactionHistory();
+        }
+        
+        function renderTransactionHistory() { 
+            const startInput = document.getElementById('trx-history-start').value, endInput = document.getElementById('trx-history-end').value; 
+            let filtered = []; 
+            if(!startInput && !endInput) { 
+                const today = new Date().toISOString().split('T')[0]; 
+                filtered = appData.transactions.filter(t => t.date === today); 
+                document.getElementById('trx-history-start').value = today; 
+                document.getElementById('trx-history-end').value = today; 
+            } else { 
+                const start = startInput || '1970-01-01', end = endInput || '2099-12-31'; 
+                filtered = appData.transactions.filter(t => t.date >= start && t.date <= end); 
+            } 
+            
+            const startIdx = 0;
+            const endIdx = transactionPage * itemsPerPage;
+            const paginatedFiltered = filtered.slice(startIdx, endIdx);
+
+            const tb = document.querySelector('#today-trx-table tbody'); 
+            tb.innerHTML=''; 
+            paginatedFiltered.forEach(t => { 
+                const isVoid = t.amount === 0 && (t.details.isVoid || (t.details.description && t.details.description.includes("VOID"))); 
+                let info = '-'; 
+                if(t.type === 'kas_bon') {
+                    const emp = appData.employees.find(e=>e.id===t.details.employeeId)?.name || 'Unknown';
+                    info = `💸 Kas Bon<br><small>to: ${emp}</small>`;
+                } else if(t.type === 'owner_kasbon') { 
+                    const owner = appData.config.owners.find(o=>o.id===t.details.ownerId)?.name || 'Unknown';
+                    info = `💸 Kasbon Owner<br><small>to: ${owner}</small>`;
+                } else if(t.type === 'income') { 
+                    if(t.details.category === 'good') info = `📦 ${t.details.productName}`; 
+                    else { 
+                        const prod = appData.products.find(p=>p.id===t.details.productId)?.name; 
+                        const emp = appData.employees.find(e=>e.id===t.details.employeeId)?.name || '-'; 
+                        info = `✂️ ${prod}<br><small>by: ${emp}</small>`; 
+                    } 
+                } else { 
+                    info = t.details.description; 
+                } 
+                let qty = (t.type === 'income') ? t.details.qty : '-'; 
+                let totalDisplay = isVoid ? "Rp 0 (Void)" : formatRupiah(t.amount); 
+                let rowClass = isVoid ? 'voided-row' : ''; 
+                let actionBtns = ''; 
+                
+                // MODIFIKASI LABEL RIWAYAT TRANSAKSI
+                let typeLabel = '';
+                let badgeClass = '';
+
+                if (t.type === 'kas_bon') {
+                    typeLabel = 'KAS BON';
+                    badgeClass = 'badge-locked';
+                } else if (t.type === 'owner_kasbon') {
+                    typeLabel = 'KASBON OWNER';
+                    badgeClass = 'badge-locked';
+                } else if (t.type === 'income') {
+                    typeLabel = 'Pemasukan'; // Sesuai permintaan
+                    badgeClass = 'badge-in';
+                } else {
+                    typeLabel = 'Pengeluaran'; // Sesuai permintaan
+                    badgeClass = 'badge-out';
+                }
+                
+                if(userRole === 'owner') { 
+                    if(!isVoid && t.type !== 'kas_bon' && t.type !== 'owner_kasbon') { 
+                        actionBtns = `<button class="btn btn-warning" style="font-size:0.7rem;" onclick="window.editTransaction('${t.id}')">Edit</button> <button class="btn btn-danger" style="font-size:0.7rem;" onclick="window.voidTransaction('${t.id}')">Batal</button>`; 
+                    } else if (!isVoid && (t.type === 'kas_bon' || t.type === 'owner_kasbon')) {
+                         actionBtns = `<button class="btn btn-danger" style="font-size:0.7rem;" onclick="window.voidTransaction('${t.id}')">Batal</button>`; 
+                    } else {
+                        actionBtns = `<span class="badge badge-void">Batal</span>`; 
+                    }
+                } 
+                tb.innerHTML += `<tr class="${rowClass}"><td><span class="badge ${badgeClass}">${typeLabel}</span></td><td>${info}</td><td style="text-align:center">${qty}</td><td>${totalDisplay}</td><td>${actionBtns}</td></tr>`; 
+            }); 
+
+            if(endIdx >= filtered.length) {
+                document.getElementById('btn-load-more-trx').style.display = 'none';
+            }
+        }
+        
+        function renderDashboard() { 
+            initCharts();
+            
+            const n=new Date(); 
+            const m=appData.transactions.filter(t=>{ const d=new Date(t.date); return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear(); }); 
+            document.getElementById('dash-income').innerText = formatRupiah(m.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0)); 
+            document.getElementById('dash-expense').innerText = formatRupiah(m.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0)); 
+        }
+
+        // --- KAS BON LOGIC ---
+        function openKasBonModal() {
+            if(!checkRole('owner')) return;
+            document.getElementById('kb-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('kasbon-modal').style.display = 'flex';
+        }
+        function closeKasBonModal() {
+            document.getElementById('kasbon-modal').style.display = 'none';
+            document.getElementById('kb-amount').value = '';
+            document.getElementById('kb-desc').value = '';
+            document.getElementById('kb-employee').value = '';
+        }
+        async function saveKasBon(e) {
+            e.preventDefault();
+            if(!checkRole('owner')) return;
+            
+            const empId = document.getElementById('kb-employee').value;
+            const date = document.getElementById('kb-date').value;
+            const amount = getVal('kb-amount'); 
+            const desc = document.getElementById('kb-desc').value;
+
+            if(!empId || !amount) return showToast("Lengkapi data kas bon");
+
+            try {
+                await addDoc(collection(db, "transactions"), {
+                    date,
+                    type: 'kas_bon',
+                    amount: amount,
+                    details: {
+                        employeeId: empId,
+                        description: desc || 'Pinjaman Kas Bon'
+                    }
+                });
+                showToast("Kas Bon berhasil disimpan.");
+                closeKasBonModal();
+                await fetchAllData();
+            } catch(err) {
+                showToast("Gagal: " + err.message);
+            }
+        }
+
+        // --- OWNER KAS BON LOGIC (V1.7.2) ---
+        function renderOwnerKasbonSelect() {
+            const select = document.getElementById('kasbon-owner-select');
+            if(!select) return;
+            select.innerHTML = '';
+            appData.config.owners.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o.id;
+                opt.text = o.name;
+                select.appendChild(opt);
+            });
+            document.getElementById('kasbon-owner-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        async function saveOwnerKasBon() {
+            if(!checkRole('owner')) return;
+            const ownerId = document.getElementById('kasbon-owner-select').value;
+            const date = document.getElementById('kasbon-owner-date').value;
+            const amount = getVal('kasbon-owner-amount'); 
+            const desc = document.getElementById('kasbon-owner-desc').value;
+
+            if(!ownerId || !amount) return showToast("Lengkapi data kasbon owner");
+
+            try {
+                await addDoc(collection(db, "transactions"), {
+                    date,
+                    type: 'owner_kasbon',
+                    amount: amount,
+                    details: {
+                        ownerId: ownerId,
+                        description: desc || 'Pinjaman Owner'
+                    }
+                });
+                showToast("Kasbon Owner berhasil disimpan.");
+                document.getElementById('kasbon-owner-amount').value = '';
+                document.getElementById('kasbon-owner-desc').value = '';
+                await fetchAllData();
+            } catch(err) {
+                showToast("Gagal: " + err.message);
+            }
+        }
 
         // --- PAYROLL ---
         function switchPayrollTab(tab) { document.querySelectorAll('#gaji-karyawan .tab').forEach(t=>t.classList.remove('active')); event.currentTarget.classList.add('active'); document.querySelectorAll('#gaji-karyawan .tab-content').forEach(c=>c.style.display='none'); document.getElementById('tab-pay-'+tab).style.display='block'; if(tab==='history') renderPayrollHistory(); }
-        function calculatePayroll() { if(!checkRole('owner')) return; const start = document.getElementById('pay-start').value, end = document.getElementById('pay-end').value; if(!start || !end) return showToast("Pilih rentang tanggal"); 
-        // FIX: Filter to prevent crash on legacy data and only count active transactions
-        const periodTrx = appData.transactions.filter(t => t.type === 'income' && (t.details?.category === 'service' || !t.details?.category) && t.date >= start && t.date <= end && t.amount > 0); 
-        const empData = {}; periodTrx.forEach(t => { const eid = t.details.employeeId, pid = t.details.productId, prod = appData.products.find(p=>p.id===pid), prodName = prod ? prod.name : 'Unknown', qty = t.details.qty || 1; if(!empData[eid]) empData[eid] = { totalQty:0, totalOmset:0, totalComm:0, details: {} }; empData[eid].totalQty += qty; empData[eid].totalOmset += t.amount; empData[eid].totalComm += t.details.commission; if(!empData[eid].details[prodName]) empData[eid].details[prodName] = 0; empData[eid].details[prodName] += qty; }); lastCalculatedPayroll = []; const tb = document.querySelector('#payroll-table tbody'); tb.innerHTML=''; appData.employees.forEach(e => { if(empData[e.id]) { const d = empData[e.id]; let detailHtml = '<div class="detail-list">'; for(let pName in d.details) { detailHtml += `<div class="detail-item"><span>${pName}</span><span>${d.details[pName]}x</span></div>`; } detailHtml += '</div>'; lastCalculatedPayroll.push({ empId: e.id, empName: e.name, totalQty: d.totalQty, totalOmset: d.totalOmset, totalComm: d.totalComm, detailHtml: detailHtml }); tb.innerHTML += `<tr><td style="font-weight:bold">${e.name}</td><td style="text-align:center">${d.totalQty}</td><td>${formatRupiah(d.totalOmset)}</td><td style="color:var(--primary); font-weight:bold">${formatRupiah(d.totalComm)}</td><td>${detailHtml}</td></tr>`; } }); if(tb.innerHTML === '') tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Tidak ada data layanan.</td></tr>'; }
         
-        // FIX: Ensure data structure is wrapped correctly and ID is saved explicitly
+        function calculatePayroll() { 
+            if(!checkRole('owner')) return; 
+            const start = document.getElementById('pay-start').value, end = document.getElementById('pay-end').value; 
+            if(!start || !end) return showToast("Pilih rentang tanggal"); 
+            
+            const existingPeriod = appData.payrollHistory.find(h => h.periodStart === start && h.periodEnd === end);
+            const btnSave = document.getElementById('btn-save-payroll');
+            
+            if(existingPeriod) {
+                btnSave.disabled = true;
+                btnSave.innerText = "Gaji Periode Ini Tersimpan";
+                showToast("Periode ini sudah terkunci di riwayat.");
+            } else {
+                btnSave.disabled = false;
+                btnSave.innerText = "Simpan & Kunci Riwayat";
+            }
+
+            const periodTrx = appData.transactions.filter(t => t.type === 'income' && (t.details?.category === 'service' || !t.details?.category) && t.date >= start && t.date <= end && t.amount > 0); 
+            const empData = {}; 
+            periodTrx.forEach(t => { 
+                const eid = t.details.employeeId, pid = t.details.productId, prod = appData.products.find(p=>p.id===pid), prodName = prod ? prod.name : 'Unknown', qty = t.details.qty || 1; 
+                if(!empData[eid]) empData[eid] = { totalQty:0, totalOmset:0, totalComm:0, details: {} }; 
+                empData[eid].totalQty += qty; 
+                empData[eid].totalOmset += t.amount; 
+                empData[eid].totalComm += t.details.commission; 
+                if(!empData[eid].details[prodName]) empData[eid].details[prodName] = 0; 
+                empData[eid].details[prodName] += qty; 
+            }); 
+            
+            lastCalculatedPayroll = []; 
+            const tb = document.querySelector('#payroll-table tbody'); 
+            tb.innerHTML=''; 
+            
+            appData.employees.forEach(e => { 
+                if(empData[e.id]) { 
+                    const d = empData[e.id]; 
+                    
+                    const kasBonTrx = appData.transactions.filter(t => 
+                        t.type === 'kas_bon' && 
+                        t.details.employeeId === e.id && 
+                        t.date >= start && 
+                        t.date <= end
+                    );
+                    const totalKasBon = kasBonTrx.reduce((sum, t) => sum + t.amount, 0);
+                    
+                    lastCalculatedPayroll.push({ 
+                        empId: e.id, 
+                        empName: e.name, 
+                        totalQty: d.totalQty, 
+                        totalOmset: d.totalOmset, 
+                        totalComm: d.totalComm, 
+                        bonus: 0, 
+                        kasBon: totalKasBon,
+                        totalFinal: d.totalComm - totalKasBon, 
+                        detailRaw: d.details 
+                    }); 
+                    
+                    const index = lastCalculatedPayroll.length - 1;
+                    
+                    tb.innerHTML += `
+                        <tr>
+                            <td style="font-weight:bold">${e.name}</td>
+                            <td style="text-align:center">${d.totalQty}</td>
+                            <td>${formatRupiah(d.totalOmset)}</td>
+                            <td style="text-align:right">
+                                <input type="text" class="money-input bonus-input" data-index="${index}" 
+                                       value="0" placeholder="0" inputmode="numeric"
+                                       style="width:100px; padding:4px; background:#333; border:1px solid #555; color:white; font-size:0.85rem; text-align:right;">
+                            </td>
+                            <td style="text-align:right; color:var(--text-main); font-weight:bold;" id="gross-sal-${index}">${formatRupiah(d.totalComm)}</td>
+                            <td style="text-align:right; color:var(--danger);">${formatRupiah(totalKasBon)}</td>
+                            <td style="color:var(--success); font-weight:bold; text-align:right">${formatRupiah(d.totalComm - totalKasBon)}</td>
+                            <td style="text-align:center;"><button class="btn btn-secondary btn-sm" title="Lihat Detail" onclick="window.showPayrollDetail(null, ${index})">👁️</button></td>
+                        </tr>`; 
+                } 
+            }); 
+            if(tb.innerHTML === '') tb.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">Tidak ada data layanan.</td></tr>';
+            
+            // Re-attach formatter to new inputs
+            setupCurrencyInputs();
+        }
+        
+        document.addEventListener('input', function(e) {
+            if(e.target.classList.contains('bonus-input')) {
+                const index = e.target.dataset.index;
+                const bonus = getVal(null, e.target.value); // Special getVal for element
+                if(lastCalculatedPayroll[index]) {
+                    lastCalculatedPayroll[index].bonus = bonus;
+                    lastCalculatedPayroll[index].totalFinal = lastCalculatedPayroll[index].totalComm + bonus - lastCalculatedPayroll[index].kasBon;
+                    
+                    const row = e.target.closest('tr');
+                    const grossCell = row.cells[4]; 
+                    const totalCell = row.cells[6];
+                    if(grossCell) grossCell.innerText = formatRupiah(lastCalculatedPayroll[index].totalComm + bonus);
+                    if(totalCell) totalCell.innerText = formatRupiah(lastCalculatedPayroll[index].totalFinal);
+                }
+            }
+        });
+        
         async function savePayrollHistory() { 
             if(!checkRole('owner')) return; 
             if(lastCalculatedPayroll.length === 0) return showToast("Hitung gaji dulu."); 
@@ -1069,53 +1751,265 @@
             const start = document.getElementById('pay-start').value;
             const end = document.getElementById('pay-end').value;
             
-            // EXPLICITLY wrap in 'records' array to prevent crash in render
-            const docRef = await addDoc(collection(db, "payrollHistory"), { 
-                periodStart: start, 
-                periodEnd: end, 
-                records: lastCalculatedPayroll, 
-                timestamp: new Date().toLocaleString() 
-            });
-            
-            // CRITICAL FIX: Write ID explicitly to document to ensure consistency
-            await updateDoc(docRef, { id: docRef.id });
+            const btn = document.getElementById('btn-save-payroll');
+            const originalText = btn.innerText;
 
-            await fetchAllData(); 
-            renderPayrollHistory(); // EXPLICIT CALL to force UI refresh
-            showToast("Gaji Dikunci");
+            try {
+                btn.innerText = "MENYIMPAN...";
+                btn.disabled = true;
+
+                const recordsWithStatus = lastCalculatedPayroll.map(r => ({
+                    ...r,
+                    isPaid: false,
+                    paidDate: ''
+                }));
+
+                const totalSalary = recordsWithStatus.reduce((sum, item) => sum + item.totalComm + item.bonus, 0);
+                const totalPureCommission = recordsWithStatus.reduce((sum, item) => sum + item.totalComm, 0);
+                const salaryDifference = totalSalary - totalPureCommission;
+
+                if(salaryDifference > 0) {
+                    await addDoc(collection(db, "transactions"), { 
+                        date: new Date().toISOString().split('T')[0], 
+                        type: 'expense', 
+                        amount: salaryDifference, 
+                        details: { description: 'Pembayaran Bonus/Tunjangan Karyawan' } 
+                    });
+                    showToast("Gaji disimpan. Bonus dicatat di pengeluaran.");
+                } else {
+                    showToast("Gaji Dikunci.");
+                }
+
+                const docRef = await addDoc(collection(db, "payrollHistory"), { 
+                    periodStart: start, 
+                    periodEnd: end, 
+                    records: recordsWithStatus, 
+                    timestamp: new Date().toLocaleString() 
+                });
+                await updateDoc(docRef, { id: docRef.id });
+                await fetchAllData(); 
+                renderPayrollHistory(); 
+            } catch(e) {
+                showToast(e.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
+
         function renderPayrollHistory() { 
             if(!checkRole('owner')) return; 
             const tb = document.querySelector('#payroll-history-table tbody'); 
             tb.innerHTML=''; 
-            
-            // Handle empty state
             if (appData.payrollHistory.length === 0) {
-                tb.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Belum ada riwayat gaji.</td></tr>';
+                tb.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">Belum ada riwayat gaji.</td></tr>';
                 return;
             }
+            
+            const sortedHistory = [...appData.payrollHistory].sort((a,b) => (a.periodStart < b.periodStart ? 1 : -1));
 
-            appData.payrollHistory.forEach(h => { 
-                // FIX: Safety check for 'records' property
+            sortedHistory.forEach((h, hIdx) => { 
                 if(h.records && Array.isArray(h.records)) {
-                    h.records.forEach(r => { 
-                        // Layout Sama dengan Live Preview: Periode, Nama, Cust, Omset, Gaji, Detail, Aksi
+                    h.records.forEach((r, rIdx) => { 
+                        const bonus = r.bonus || 0;
+                        const kasBon = r.kasBon || 0;
+                        const total = r.totalComm + bonus;
+                        
+                        const isPaid = r.isPaid || false;
+                        const statusBadge = isPaid 
+                            ? `<span class="badge badge-paid">LUNAS</span>` 
+                            : `<span class="badge badge-unpaid">BELUM</span>`;
+                        
+                        const statusBtn = isPaid
+                            ? `<button class="btn btn-secondary btn-sm" onclick="window.updatePaymentStatus('${h.id}', ${rIdx}, false, '${r.empName}')" title="Tandai Belum Lunas">Reset</button>`
+                            : `<button class="btn btn-success btn-sm" onclick="window.updatePaymentStatus('${h.id}', ${rIdx}, true, '${r.empName}')" title="Tandai Lunas">Lunas</button>`;
+
                         tb.innerHTML += `
                             <tr>
                                 <td>${h.periodStart} <br><small>${h.periodEnd}</small></td>
                                 <td><b>${r.empName}</b></td>
                                 <td style="text-align:center">${r.totalQty}</td>
-                                <td style="text-align:right">${formatRupiah(r.totalOmset)}</td>
-                                <td style="color:var(--primary); font-weight:bold; text-align:right">${formatRupiah(r.totalComm)}</td>
-                                <td>${r.detailHtml}</td>
-                                <td><button class="btn btn-warning" style="font-size:0.7rem;" onclick="window.editPayrollHistory('${h.id}')">Unlock</button></td>
+                                <td style="text-align:right">${formatRupiah(total - kasBon)}</td>
+                                <td style="text-align:center">${statusBadge}</td>
+                                <td style="text-align:center; font-size:0.85rem;">${r.paidDate || '-'}</td>
+                                <td><button class="btn btn-secondary btn-sm" onclick="window.showPayrollDetail('${h.id}', ${rIdx})">Lihat Detail</button></td>
+                                <td>${statusBtn} <button class="btn btn-danger btn-sm" onclick="window.editPayrollHistory('${h.id}')" title="Buka Kunci/Unlock">🔓</button></td>
                             </tr>
                         `; 
                     });
                 }
             });
         }
-        async function editPayrollHistory(id) { if(!checkRole('owner')) return; if(confirm('Buka kunci?')) { await deleteDoc(doc(db, "payrollHistory", id)); await fetchAllData(); showToast("Riwayat dihapus"); } }
+        
+        async function updatePaymentStatus(historyId, recordIndex, newStatus, empName) {
+            if(!checkRole('owner')) return;
+            
+            let paidDate = '';
+            if(newStatus) {
+                paidDate = prompt(`Masukkan tanggal pembayaran untuk ${empName} (YYYY-MM-DD):`, new Date().toISOString().split('T')[0]);
+                if(!paidDate) return;
+            }
+
+            try {
+                const historyDoc = appData.payrollHistory.find(h => h.id === historyId);
+                if(historyDoc && historyDoc.records[recordIndex]) {
+                    historyDoc.records[recordIndex].isPaid = newStatus;
+                    historyDoc.records[recordIndex].paidDate = paidDate;
+                    
+                    await updateDoc(doc(db, "payrollHistory", historyId), {
+                        records: historyDoc.records
+                    });
+                    showToast("Status pembayaran diupdate.");
+                    await fetchAllData();
+                    renderPayrollHistory();
+                }
+            } catch(e) {
+                showToast("Gagal update: " + e.message);
+            }
+        }
+
+        let currentSlipHistory = null;
+        let currentSlipRecord = null;
+
+        function showPayrollDetail(historyId, recordIndex) {
+            if(historyId === null) {
+                currentSlipHistory = null;
+                currentSlipRecord = lastCalculatedPayroll[recordIndex];
+                const start = document.getElementById('pay-start').value;
+                const end = document.getElementById('pay-end').value;
+                document.getElementById('payroll-period-display').innerText = `Periode: ${start} s/d ${end}`;
+            } else {
+                const history = appData.payrollHistory.find(h => h.id === historyId);
+                if(!history) return;
+                currentSlipHistory = history;
+                currentSlipRecord = history.records[recordIndex];
+                document.getElementById('payroll-period-display').innerText = `Periode: ${history.periodStart} s/d ${history.periodEnd}`;
+            }
+            
+            if(!currentSlipRecord) return;
+
+            const r = currentSlipRecord;
+            
+            let start, end;
+            if(currentSlipHistory) {
+                start = currentSlipHistory.periodStart;
+                end = currentSlipHistory.periodEnd;
+            } else {
+                start = document.getElementById('pay-start').value;
+                end = document.getElementById('pay-end').value;
+            }
+
+            const kasBonList = appData.transactions.filter(t => 
+                t.type === 'kas_bon' && 
+                t.details.employeeId === r.empId && 
+                t.date >= start && 
+                t.date <= end
+            );
+
+            let html = `
+                <div style="background:#222; padding:15px; border-radius:8px; margin-bottom:15px;">
+                    <p style="font-size:1.1rem; margin-bottom:5px;">${r.empName}</p>
+                    <p>Total Pelanggan: <b>${r.totalQty}</b></p>
+                    <p>Gaji Kotor (Komisi+Bonus): <b style="color:var(--primary)">${formatRupiah(r.totalComm + r.bonus)}</b></p>
+                    <p>Potongan Kas Bon: <span style="color:var(--danger)">-${formatRupiah(r.kasBon)}</span></p>
+                    <hr style="border-color:#444; margin:10px 0;">
+                    <p style="font-size:1.2rem;">Total Diterima: <b style="color:var(--success)">${formatRupiah(r.totalFinal)}</b></p>
+                </div>
+                <h5 style="color:var(--primary); border-bottom:1px solid #444; padding-bottom:5px; margin-bottom:10px;">Rincian Layanan</h5>
+                <div style="max-height:200px; overflow-y:auto;">
+            `;
+            
+            if(r.detailRaw) {
+                for(let [name, count] of Object.entries(r.detailRaw)) {
+                    html += `<div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:5px;"><span>${name}</span><span>${count}x</span></div>`;
+                }
+            } else {
+                html += `<div style="color:#888;">Data detail layanan tidak tersedia (data lama).</div>`;
+            }
+
+            html += `</div>`;
+            
+            if(kasBonList.length > 0) {
+                html += `
+                    <h5 style="color:var(--danger); border-bottom:1px solid #444; padding-bottom:5px; margin-top:20px; margin-bottom:10px;">Riwayat Kas Bon Periode Ini</h5>
+                    <ul style="padding-left:20px; color:#ccc;">
+                `;
+                kasBonList.forEach(kb => {
+                    html += `<li style="margin-bottom:5px;">${kb.date}: <b>${formatRupiah(kb.amount)}</b> (${kb.details.description || '-'})</li>`;
+                });
+                html += `</ul>`;
+            } else {
+                html += `<p style="color:#888; margin-top:10px;">Tidak ada riwayat kas bon pada periode ini.</p>`;
+            }
+
+            document.getElementById('payroll-detail-content').innerHTML = html;
+            document.getElementById('payroll-detail-modal').style.display = 'flex';
+        }
+
+        function closePayrollDetailModal() {
+            document.getElementById('payroll-detail-modal').style.display = 'none';
+        }
+
+        function downloadPayrollSlip() {
+            if(!currentSlipRecord) return;
+
+            const r = currentSlipRecord;
+            const period = document.getElementById('payroll-period-display').innerText;
+
+            const slipContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Slip Gaji - ${r.empName}</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: #f4f4f4; }
+                    .slip-card { background: white; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #d4af37; padding-bottom: 20px; }
+                    .header h1 { margin: 0; color: #333; }
+                    .header p { color: #666; margin: 5px 0; }
+                    .row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; }
+                    .row span:first-child { color: #555; }
+                    .row span:last-child { font-weight: bold; }
+                    .total-row { margin-top: 20px; padding-top: 20px; border-top: 2px solid #333; font-size: 18px; color: #d4af37; }
+                    .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #999; }
+                </style>
+            </head>
+            <body>
+                <div class="slip-card">
+                    <div class="header">
+                        <h1>${appData.config.businessName || "BARBERSHOP"}</h1>
+                        <h2>SLIP GAJI</h2>
+                        <p>${period}</p>
+                    </div>
+                    <div class="row"><span>Nama Karyawan:</span> <span>${r.empName}</span></div>
+                    <div class="row"><span>Total Pelanggan:</span> <span>${r.totalQty}</span></div>
+                    <div class="row"><span>Komisi:</span> <span>${formatRupiah(r.totalComm)}</span></div>
+                    <div class="row"><span>Bonus/Tunjangan:</span> <span>${formatRupiah(r.bonus || 0)}</span></div>
+                    <div class="row"><span>Potongan Kas Bon:</span> <span>- ${formatRupiah(r.kasBon)}</span></div>
+                    <div class="row total-row">
+                        <span>TOTAL DITERIMA:</span>
+                        <span>${formatRupiah(r.totalFinal)}</span>
+                    </div>
+                    <div class="footer">
+                        <p>Slip ini dibuat secara otomatis oleh sistem.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            `;
+
+            const blob = new Blob([slipContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Slip_Gaji_${r.empName}_${new Date().toISOString().split('T')[0]}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        async function editPayrollHistory(id) { if(!checkRole('owner')) return; if(confirm('Buka kunci ini? Data akan dihapus dari riwayat.')) { await deleteDoc(doc(db, "payrollHistory", id)); await fetchAllData(); showToast("Riwayat dihapus"); } }
 
         // --- REPORT & SETTINGS ---
         function renderOwnerSettings() {
@@ -1131,7 +2025,7 @@
                 `;
                 container.appendChild(div);
             });
-            document.getElementById('conf-business-name').value = appData.config.businessName || "";
+            document.getElementById('conf-business-name').value = appData.config.businessName || "Barbershop";
             document.getElementById('brand-name').innerText = appData.config.businessName || "BARBERSHOP MANAGER";
             document.getElementById('print-business-name').innerText = appData.config.businessName || "LAPORAN KEUANGAN";
         }
@@ -1145,13 +2039,22 @@
             const start = document.getElementById('rep-start').value, end = document.getElementById('rep-end').value;
             if(!start || !end) return showToast("Pilih tanggal");
             
+            const existingReport = appData.reportHistory.find(r => r.periodStart === start && r.periodEnd === end);
+            const btnSave = document.getElementById('btn-save-lock-report');
+            
+            if(existingReport) {
+                btnSave.disabled = true;
+                btnSave.innerText = "Periode Sudah Tersimpan";
+                showToast("Periode ini sudah terkunci.");
+            } else {
+                btnSave.disabled = false;
+                btnSave.innerText = "2. SIMPAN & KUNCI LAPORAN";
+            }
+            
             document.getElementById('report-result').style.display = 'block';
-            // Reset Step 2 buttons
             document.getElementById('final-result').style.display = 'none';
-            document.getElementById('btn-save-lock-report').style.display = 'none';
             document.getElementById('print-period').innerText = `${start} s/d ${end}`;
             
-            // FIX: Filter out voided transactions (amount > 0) to prevent data pollution
             const trxInPeriod = appData.transactions.filter(t => t.date >= start && t.date <= end && t.amount > 0);
             const incomeTrx = trxInPeriod.filter(t => t.type === 'income');
             const expenseTrx = trxInPeriod.filter(t => t.type === 'expense');
@@ -1170,17 +2073,20 @@
             const totalEmergIn = emergInTrx.reduce((a,b)=>a+b.amount,0);
             
             let totalSalary = 0; 
-            // FIX: Safe navigation using optional chaining '?'
-            incomeTrx.forEach(t=> { if((t.details.category === 'service' || !t.details.category) && t.details?.commission) totalSalary += t.details.commission; });
+            incomeTrx.forEach(t=> { 
+                if((t.details.category === 'service' || !t.details.category) && t.details?.commission) totalSalary += t.details.commission; 
+            });
+            expenseTrx.forEach(t => {
+                if(t.details.description && t.details.description.includes('Bonus')) {
+                    totalSalary += t.amount;
+                }
+            });
 
             const opProfit = totalIncome - totalExpense - totalSalary;
 
-            // CHANGE: Calculate Cash Opening based on Total Modal Masuk (All Time)
-            // This represents the "Saldo Awal Kas" (Total Modal) from the Dashboard logic
             const allInjectTrx = appData.transactions.filter(t => t.type === 'modal_in');
             const totalInjectAllTime = allInjectTrx.reduce((a,b)=>a+b.amount,0);
             
-            // CHANGE: Cash Movement calculation excludes Injects (because Opening already accounts for Total Inject)
             const cashMovementInPeriod = totalIncome - totalExpense - totalSalary - totalSavingsOut + totalSavingsIn - totalEmergOut + totalEmergIn;
 
             const cashOpening = totalInjectAllTime;
@@ -1197,7 +2103,7 @@
             const emergClosing = emergOpening + emergMovement;
 
             document.getElementById('rep-cash-open').innerText = formatRupiah(cashOpening);
-            document.getElementById('rep-cash-inject').innerText = formatRupiah(totalInject); // This shows period injection only
+            document.getElementById('rep-cash-inject').innerText = formatRupiah(totalInject);
             document.getElementById('rep-income-total').innerText = formatRupiah(totalIncome);
             document.getElementById('rep-exp-total').innerText = formatRupiah(totalExpense);
             document.getElementById('rep-salary-total').innerText = formatRupiah(totalSalary);
@@ -1267,7 +2173,7 @@
                 totalPct += pct;
                 const amount = Math.floor(distributable * (pct / 100));
                 if(display) display.innerText = formatRupiah(amount);
-                shares.push({ name: owner.name, pct: pct, amount: amount });
+                shares.push({ id: owner.id, name: owner.name, pct: pct, amount: amount, kasbon: 0, netAmount: amount });
             });
             const warningDiv = document.querySelector('.owner-shares-list');
             if(warningDiv) {
@@ -1283,59 +2189,97 @@
             window.print();
         }
 
-        // --- STEP 1: PROCESS (CALCULATE ONLY) ---
         async function processClosingMonth() {
             if(!checkRole('owner')) return;
-            // Validation
-            const sav = parseInt(document.getElementById('input-savings-amount').value)||0;
-            const emerg = parseInt(document.getElementById('input-emergency-amount').value)||0;
+            const sav = getVal('input-savings-amount');
+            const emerg = getVal('input-emergency-amount');
+            
             const rawProfit = document.getElementById('temp-op-profit').innerText;
             const profit = parseInt(rawProfit.replace(/[^0-9]/g,''))||0;
             const s=document.getElementById('rep-start').value, e=document.getElementById('rep-end').value;
             if(!s||!e) throw new Error("Pilih periode");
             
+            const isLocked = appData.reportHistory.some(r => r.periodStart === s && r.periodEnd === e);
+            if(isLocked) throw new Error("Periode ini sudah tersimpan.");
+            
             let totalPctCheck = 0;
-            const calculatedShares = updateClosingPreview(profit, sav, emerg);
-            calculatedShares.forEach(sh => totalPctCheck += sh.pct);
+            let calculatedShares = updateClosingPreview(profit, sav, emerg);
+
+            // V1.7.2: DEDUCT KASBON OWNER
+            calculatedShares.forEach((share) => {
+                // Sum all owner_kasbon transactions for this owner ID
+                const ownerKasbons = appData.transactions.filter(t => 
+                    t.type === 'owner_kasbon' && 
+                    t.details.ownerId === share.id
+                );
+                const totalKasbon = ownerKasbons.reduce((sum, t) => sum + t.amount, 0);
+                
+                share.kasbon = totalKasbon;
+                share.netAmount = share.amount - totalKasbon; // Reduce share by debt
+                
+                totalPctCheck += share.pct;
+            });
 
             if(totalPctCheck !== 100) throw new Error(`Total persentase harus 100%. Saat ini ${totalPctCheck}%`);
 
             const finalProfit = profit - sav - emerg;
-            
-            // Calculate Final Cash
             const currentCashText = document.getElementById('rep-cash-close').innerText;
             const currentCash = parseInt(currentCashText.replace(/[^0-9]/g,'')) || 0;
-            const finalCash = currentCash - sav - emerg - calculatedShares.reduce((a,b)=>a+b.amount,0);
             
-            // Store in buffer (DO NOT SAVE TO DB YET)
+            // Net Cash after all owner payouts (net of kasbon)
+            const totalOwnerNetPayout = calculatedShares.reduce((a,b)=>a+b.netAmount,0);
+            
+            // V1.7.2 FIX: Logic perubahan agar Saldo Akhir menjadi 0
+            // Karena Kasbon Owner mungkin tidak mengurangi fisik kas saat transaksi (masih dianggap uang kas),
+            // maka saat 'Tutup Buku', uang hasil bagi hasil yang DIPOTONG KASBON sebenarnya tidak keluar dari kas fisik.
+            // Namun secara akuntansi untuk user, saldo harus 0.
+            // Jadi kita harus mengurangi 'Total Owner Net Payout' PLUS 'Total Kasbon yang dipotong'.
+            // Total deduction = Net Payout (uang diambil owner) + Kasbon (uang disimpan/tetap di kas tapi dianggap 'bayar hutang').
+            
+            const totalOwnerKasbonDeduction = calculatedShares.reduce((a,b)=>a+b.kasbon,0);
+            
+            const finalCash = currentCash - sav - emerg - totalOwnerNetPayout - totalOwnerKasbonDeduction;
+            
             pendingReportData = {
                 start: s, end: e,
                 profit: profit, sav: sav, emerg: emerg, finalProfit: finalProfit,
-                shares: calculatedShares,
-                finalCash: finalCash, // Critical: Store calculated final cash
+                shares: calculatedShares, 
+                finalCash: finalCash,
                 grossIncome: parseInt(document.getElementById('pl-gross').innerText.replace(/[^0-9]/g,'')),
                 expense: parseInt(document.getElementById('pl-exp').innerText.replace(/[^0-9]/g,'')),
                 salary: parseInt(document.getElementById('pl-salary').innerText.replace(/[^0-9]/g,''))
             };
             
-            // Show Summary (Visual Only)
             const finalContainer = document.getElementById('final-result');
             finalContainer.style.display = 'block';
             const finalList = document.getElementById('final-shares-display');
             finalList.innerHTML = '';
             
             calculatedShares.forEach(sh => {
-                finalList.innerHTML += `<div class="owner-share-item" style="background:rgba(0,0,0,0.2);">
-                    <div class="owner-share-info">${sh.name} (${sh.pct}%)</div>
-                    <div class="owner-share-calc">${formatRupiah(sh.amount)}</div>
+                finalList.innerHTML += `
+                <div class="slip-card">
+                    <h4 style="margin:0 0 10px 0; color:#000;">${sh.name} (${sh.pct}%)</h4>
+                    <div class="slip-row">
+                        <span>Bagi Hasil Kotor:</span>
+                        <span>${formatRupiah(sh.amount)}</span>
+                    </div>
+                    ${sh.kasbon > 0 ? `
+                    <div class="slip-row slip-deduction">
+                        <span>Potongan Kasbon:</span>
+                        <span>-${formatRupiah(sh.kasbon)}</span>
+                    </div>` : ''}
+                    <div class="slip-row final">
+                        <span>Terima Bersih:</span>
+                        <span>${formatRupiah(sh.netAmount)}</span>
+                    </div>
                 </div>`;
             });
 
             finalList.innerHTML += `
                 <div style="border-top: 2px dashed var(--border); margin-top: 10px; padding-top: 10px;">
                     <div class="owner-share-item">
-                        <div class="owner-share-info" style="color:var(--text-muted)">Total Bagi Hasil (Diambil)</div>
-                        <div class="owner-share-calc" style="color:var(--primary)">${formatRupiah(calculatedShares.reduce((a,b)=>a+b.amount,0))}</div>
+                        <div class="owner-share-info" style="color:var(--text-muted)">Total Bagi Hasil (Diambil Bersih)</div>
+                        <div class="owner-share-calc" style="color:var(--primary)">${formatRupiah(totalOwnerNetPayout)}</div>
                     </div>
                     <div class="owner-share-item" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border);">
                         <div class="owner-share-info" style="color:var(--text-main); font-weight:bold;">SISA SALDO KAS</div>
@@ -1348,7 +2292,6 @@
             document.getElementById('btn-save-lock-report').style.display = 'block';
         }
 
-        // --- STEP 2: SAVE (LOCK) - AUTO SYNC VERSION ---
         async function saveClosingMonth() {
             if(!checkRole('owner')) return;
             if(!pendingReportData) return showToast("Proses laporan dulu.");
@@ -1359,30 +2302,24 @@
                 const emerg = pendingReportData.emerg || 0;
                 const calculatedShares = pendingReportData.shares || [];
 
-                // 1. Update Local Config
                 appData.config.savings += sav;
                 appData.config.emergencySavings += emerg;
                 await updateConfigInFirebase();
 
-                // 2. Add Transactions (Saving & Emergency are auto-internal transfers)
                 if(sav > 0) { await addDoc(collection(db, "transactions"), { date:new Date().toISOString().split('T')[0], type:'saving_out', amount: sav, details:{description:'Setor Tabungan (Tutup Buku)'} }); }
                 if(emerg > 0) { await addDoc(collection(db, "transactions"), { date:new Date().toISOString().split('T')[0], type:'emergency_saving_out', amount: emerg, details:{description:'Setor Dana Darurat (Tutup Buku)'} }); }
                 
-                // 3. AUTO-SYNC: Add Transaction for Owner Share Withdrawal (Explicit Expense)
-                const totalOwnerShare = calculatedShares.reduce((a, b) => a + b.amount, 0);
-                if (totalOwnerShare > 0) {
+                // Save the NET amount (after kasbon deduction) as expense/share payout
+                const totalOwnerNetPayout = calculatedShares.reduce((a, b) => a + b.netAmount, 0);
+                if (totalOwnerNetPayout > 0) {
                     await addDoc(collection(db, "transactions"), { 
                         date: new Date().toISOString().split('T')[0], 
-                        type: 'expense', // This is withdrawal
-                        amount: totalOwnerShare, 
-                        details: { description: 'Bagi Hasil Owner (Tutup Buku)' } 
+                        type: 'expense', 
+                        amount: totalOwnerNetPayout, 
+                        details: { description: 'Bagi Hasil Owner (Bersih - Potong Kasbon)' } 
                     });
-                    showToast(`Laporan Terkunci. Rp ${formatRupiah(totalOwnerShare)} otomatis berkurang dari Kas.`);
-                } else {
-                    showToast("Laporan Terkunci. Tidak ada hasil bagi owner.");
                 }
                 
-                // 4. Save Report History
                 const historyRecord = { 
                     periodStart: pendingReportData.start, 
                     periodEnd: pendingReportData.end, 
@@ -1392,20 +2329,25 @@
                     savingsDeposit: sav,
                     emergencyDeposit: emerg,
                     netProfit: pendingReportData.finalProfit,
-                    owners: calculatedShares,
-                    cashClose: pendingReportData.finalCash // FIX: Save Final Cash Balance
+                    owners: calculatedShares.map(s => ({
+                         id: s.id, name: s.name, pct: s.pct, 
+                         amount: s.amount, 
+                         kasbon: s.kasbon, 
+                         netAmount: s.netAmount 
+                    })),
+                    cashClose: pendingReportData.finalCash
                 };
                 
                 const docRef = await addDoc(collection(db, "reportHistory"), historyRecord);
                 await updateDoc(docRef, { id: docRef.id });
 
-                await fetchAllData(); // Crucial: Reloads data immediately after save to update Dashboard
+                await fetchAllData();
                 
-                // 5. Cleanup UI
                 pendingReportData = null;
                 document.getElementById('final-result').style.display = 'none';
                 document.getElementById('btn-save-lock-report').style.display = 'none';
                 document.getElementById('report-result').style.display = 'none';
+                showToast("Laporan Terkunci & Data Disinkronisasi.");
 
             } catch (error) {
                 console.error(error);
@@ -1448,14 +2390,14 @@
                 `;
                 if(h.owners && Array.isArray(h.owners)) {
                     h.owners.forEach(o => {
+                        const kasbonBadge = o.kasbon > 0 ? `<span style="color:var(--danger); font-size:0.8rem;">(Kasbon: -${formatRupiah(o.kasbon)})</span>` : '';
                         cardHtml += `<div class="owner-share-item">
-                            <div class="owner-share-info">${o.name} (${o.pct}%)</div>
-                            <div class="owner-share-calc">${formatRupiah(o.amount)}</div>
+                            <div class="owner-share-info">${o.name} (${o.pct}%) ${kasbonBadge}</div>
+                            <div class="owner-share-calc">${formatRupiah(o.netAmount)}</div>
                         </div>`;
                     });
                 }
                 
-                // FIX: Add display for Final Cash Balance (Sisa Saldo Kas)
                 cardHtml += `</div>
                 <div class="report-summary-row total" style="margin-top:10px; border-top:2px solid var(--success); padding-top:10px;">
                     <span style="color:var(--text-muted)">Sisa Saldo Akhir Kas (Periode Ini)</span>
@@ -1467,18 +2409,13 @@
             });
         }
         
-        // FIX: Direct delete using ID from Firestore
         async function editLockedReport(id) {
             if(!checkRole('owner')) return;
-            if(confirm('Buka kunci laporan ini?')) {
-                try {
-                    await deleteDoc(doc(db, "reportHistory", id));
-                    await fetchAllData(); 
-                    showToast("Riwayat dihapus");
-                    renderReportHistory(); 
-                } catch(e) {
-                    showToast("Gagal menghapus: " + e.message);
-                }
+            if(confirm('Buka kunci laporan ini? Data kas akan dikembalikan.')) {
+                await deleteDoc(doc(db, "reportHistory", id));
+                await fetchAllData(); 
+                showToast("Riwayat dihapus");
+                renderReportHistory(); 
             }
         }
 
@@ -1512,12 +2449,8 @@
         }
         async function manualSavingsTransaction() { 
             if(!checkRole('owner')) return; 
-            const act = document.getElementById('saving-action-type').value, amt = parseInt(document.getElementById('saving-manual-amount').value); 
+            const act = document.getElementById('saving-action-type').value, amt = getVal('saving-manual-amount'); 
             if(!amt) return showToast("Isi nominal"); 
-            // Note: Dashboard only shows Modal, but we still need to check Real Cash for transaction validation? 
-            // The user said "No connection". But we physically cannot spend money we don't have in the cash box (Real Cash).
-            // However, if Dashboard is only "Modal", we can't rely on it for validation. 
-            // We must calculate Real Cash on the fly for validation if needed.
             let realCash = 0; appData.transactions.forEach(t => { if(t.type==='income') realCash+=t.amount; if(t.type==='expense') realCash-=t.amount; if(t.type==='modal_in') realCash+=t.amount; if(t.type==='saving_out') realCash-=t.amount; if(t.type==='saving_in') realCash+=t.amount; if(t.type==='emergency_saving_out') realCash-=t.amount; if(t.type==='emergency_saving_in') realCash+=t.amount; }); 
             if(act==='deposit') { if(amt > realCash) return showToast("Saldo kas fisik kurang"); appData.config.savings+=amt; await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'saving_out', amount:amt, details:{description:'Setor Manual'} }); } 
             else { if(amt>appData.config.savings) return showToast("Saldo tabungan kurang"); appData.config.savings-=amt; await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'saving_in', amount:amt, details:{description:'Tarik Manual'} }); } 
@@ -1526,14 +2459,15 @@
         async function manualSavingsCorrection() { 
             if(!checkRole('owner')) return; 
             const r = prompt("Alasan:"); if(!r) return; 
-            const amt = parseInt(document.getElementById('saving-correction-amount').value); if(!amt) return showToast("Isi nominal"); 
+            const amt = getVal('saving-correction-amount'); 
+            if(!amt) return showToast("Isi nominal"); 
             appData.config.savings += amt; 
             await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'saving_correction', amount:amt, details:{description:`KOREKSI: ${r}`} }); 
             await updateConfigInFirebase(); await fetchAllData(); document.getElementById('saving-correction-amount').value=''; 
         }
         async function manualEmergencyTransaction() { 
             if(!checkRole('owner')) return; 
-            const act = document.getElementById('emergency-action-type').value, amt = parseInt(document.getElementById('emergency-manual-amount').value); 
+            const act = document.getElementById('emergency-action-type').value, amt = getVal('emergency-manual-amount'); 
             if(!amt) return showToast("Isi nominal"); 
             let realCash = 0; appData.transactions.forEach(t => { if(t.type==='income') realCash+=t.amount; if(t.type==='expense') realCash-=t.amount; if(t.type==='modal_in') realCash+=t.amount; if(t.type==='saving_out') realCash-=t.amount; if(t.type==='saving_in') realCash+=t.amount; if(t.type==='emergency_saving_out') realCash-=t.amount; if(t.type==='emergency_saving_in') realCash+=t.amount; }); 
             if(act==='deposit') { if(amt > realCash) return showToast("Saldo kas fisik kurang"); appData.config.emergencySavings+=amt; await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'emergency_saving_out', amount:amt, details:{description:'Setor Dana Darurat Manual'} }); } 
@@ -1543,12 +2477,74 @@
         async function manualEmergencyCorrection() { 
             if(!checkRole('owner')) return; 
             const r = prompt("Alasan:"); if(!r) return; 
-            const amt = parseInt(document.getElementById('emergency-correction-amount').value); if(!amt) return showToast("Isi nominal"); 
+            const amt = getVal('emergency-correction-amount'); 
+            if(!amt) return showToast("Isi nominal"); 
             appData.config.emergencySavings += amt; 
             await addDoc(collection(db, "transactions"), { id:Date.now(), date:new Date().toISOString().split('T')[0], type:'emergency_saving_correction', amount:amt, details:{description:`KOREKSI DANA DARURAT: ${r}`} }); 
             await updateConfigInFirebase(); await fetchAllData(); document.getElementById('emergency-correction-amount').value=''; 
         }
-        async function addCapitalInjection() { if(!checkRole('owner')) return; const d = document.getElementById('inject-date').value, a = document.getElementById('inject-amount').value; if(!d||!a) return showToast("Lengkapi data"); await addDoc(collection(db, "transactions"), { id:Date.now(), date:d, type:'modal_in', amount:parseInt(a), details:{description:'Inject Modal'} }); await fetchAllData(); document.getElementById('inject-amount').value=''; }
+        async function addCapitalInjection() { 
+            if(!checkRole('owner')) return; 
+            const btn = event.target;
+            const originalText = btn.innerText;
+            const d = document.getElementById('inject-date').value, a = getVal('inject-amount'); 
+            if(!d||!a) return showToast("Lengkapi data"); 
+            
+            try {
+                btn.innerText = "PROSES...";
+                btn.disabled = true;
+                await addDoc(collection(db, "transactions"), { id:Date.now(), date:d, type:'modal_in', amount:a, details:{description:'Inject Modal'} }); 
+                await fetchAllData(); 
+                document.getElementById('inject-amount').value=''; 
+                showToast("Modal Ditambahkan");
+            } catch(e) { showToast(e.message); }
+            finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        function exportToExcel() {
+            if(!checkRole('owner')) return;
+            const start = document.getElementById('rep-start').value || '1970-01-01';
+            const end = document.getElementById('rep-end').value || '2099-12-31';
+            
+            const filtered = appData.transactions.filter(t => t.date >= start && t.date <= end);
+            if(filtered.length === 0) return showToast("Tidak ada data untuk diexport");
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Tanggal,Tipe,Kategori,Keterangan,Jumlah,Nominal\n";
+
+            filtered.forEach(t => {
+                const date = t.date;
+                const type = t.type === 'income' ? 'Pemasukan' : (t.type === 'kas_bon' ? 'Kas Bon' : (t.type === 'owner_kasbon' ? 'Kasbon Owner' : 'Pengeluaran'));
+                let cat = t.details.category || '-';
+                let desc = t.details.description || '';
+                let qty = t.details.qty || '-';
+                let amt = t.amount;
+                
+                if(t.details.category === 'good') {
+                    cat = 'Barang';
+                    desc = t.details.productName;
+                } else if (t.details.category === 'service') {
+                    cat = 'Layanan';
+                    desc = t.details.productName;
+                    const emp = appData.employees.find(e=>e.id===t.details.employeeId)?.name || '-';
+                    desc += ` (Barber: ${emp})`;
+                }
+
+                csvContent += `${date},${type},${cat},"${desc}",${qty},${amt}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `laporan_keuangan_${start}_sd_${end}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function backupData() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData)); const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "backup_barber_" + new Date().toISOString().slice(0,10) + ".json"); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); }
         async function initiateDataReset() {
             if(!checkRole('owner')) return;
@@ -1571,7 +2567,123 @@
             finally { showLoading(false); }
         }
 
-        // --- EXPOSE ---
+        // --- ANALYTICS CHARTS ---
+        function initCharts() {
+            if (typeof Chart === 'undefined') {
+                console.warn("Chart.js belum termuat. Grafik akan diabaikan sementara.");
+                return;
+            }
+
+            const months = {};
+            appData.transactions.filter(t => t.type === 'income' && t.amount > 0).forEach(t => {
+                const d = new Date(t.date);
+                const key = `${d.getFullYear()}-${d.getMonth()}`; 
+                if(!months[key]) months[key] = 0;
+                months[key] += t.amount;
+            });
+            const sortedKeys = Object.keys(months).sort().slice(-6);
+            const chartLabels = sortedKeys.map(k => {
+                const [y, m] = k.split('-');
+                const date = new Date(y, m);
+                return date.toLocaleDateString('id-ID', { month: 'short' });
+            });
+            const chartData = sortedKeys.map(k => months[k]);
+
+            if(chartIncomeInstance) chartIncomeInstance.destroy();
+
+            chartIncomeInstance = new Chart(document.getElementById('chart-income'), {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Pendapatan',
+                        data: chartData,
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#333' }, ticks: { color: '#aaa' } },
+                        x: { grid: { display: false }, ticks: { color: '#aaa' } }
+                    }
+                }
+            });
+
+            let serviceAmt = 0, goodAmt = 0;
+            appData.transactions.filter(t => t.type === 'income' && t.amount > 0).forEach(t => {
+                if(t.details.category === 'good') goodAmt += t.amount;
+                else serviceAmt += t.amount;
+            });
+
+            if(chartPieInstance) chartPieInstance.destroy();
+
+            chartPieInstance = new Chart(document.getElementById('chart-pie'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Layanan (Jasa)', 'Barang'],
+                    datasets: [{
+                        data: [serviceAmt, goodAmt],
+                        backgroundColor: ['#d4af37', '#2196f3'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { color: '#fff' } } }
+                }
+            });
+
+            const barberStats = {};
+            appData.transactions.filter(t => t.type === 'income' && t.details.category === 'service' && t.amount > 0).forEach(t => {
+                const eid = t.details.employeeId;
+                if(!barberStats[eid]) barberStats[eid] = 0;
+                barberStats[eid] += t.amount;
+            });
+            
+            const sortedBarbers = Object.entries(barberStats)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+            
+            const barberLabels = sortedBarbers.map(([id]) => {
+                const emp = appData.employees.find(e => e.id === id);
+                return emp ? emp.name : 'Unknown';
+            });
+            const barberOmsets = sortedBarbers.map(([, amt]) => amt);
+
+            if(chartBarbersInstance) chartBarbersInstance.destroy();
+
+            chartBarbersInstance = new Chart(document.getElementById('chart-barbers'), {
+                type: 'bar',
+                data: {
+                    labels: barberLabels,
+                    datasets: [{
+                        label: 'Omset',
+                        data: barberOmsets,
+                        backgroundColor: '#4caf50',
+                        borderRadius:4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#333' }, ticks: { color: '#aaa' } },
+                        y: { grid: { display: false }, ticks: { color: '#aaa' } }
+                    }
+                }
+            });
+        }
+
+        // --- EXPOSE FUNCTIONS TO WINDOW ---
         window.handleLogin = handleLogin; window.handleLogout = handleLogout; window.registerNewUser = registerNewUser; window.handleResetPassword = handleResetPassword;
         window.showSection = showSection; window.toggleTransactionFields = toggleTransactionFields; window.toggleCategoryFields = toggleCategoryFields;
         window.showEmployeeCommInfo = showEmployeeCommInfo; window.autoFillPrice = autoFillPrice; window.autoFillPriceGood = autoFillPriceGood;
@@ -1580,19 +2692,36 @@
         window.saveProduct = saveProduct; window.resetProductForm = resetProductForm; window.editProduct = editProduct; window.deleteProduct = deleteProduct;
         window.saveEmployee = saveEmployee; window.resetEmployeeForm = resetEmployeeForm; window.editEmployee = editEmployee; window.deleteEmployee = deleteEmployee;
         window.saveGood = saveGood; window.resetGoodForm = resetGoodForm; window.editGood = editGood; window.deleteGood = deleteGood;
+        
+        // Kas Bon & Payroll
         window.switchPayrollTab = switchPayrollTab; window.calculatePayroll = calculatePayroll; window.savePayrollHistory = savePayrollHistory; window.editPayrollHistory = editPayrollHistory;
+        window.openKasBonModal = openKasBonModal; window.closeKasBonModal = closeKasBonModal; window.saveKasBon = saveKasBon;
+        window.updatePaymentStatus = updatePaymentStatus; window.showPayrollDetail = showPayrollDetail; window.closePayrollDetailModal = closePayrollDetailModal; window.downloadPayrollSlip = downloadPayrollSlip;
+
+        // Owner Kasbon (V1.7.2)
+        window.saveOwnerKasBon = saveOwnerKasBon;
+
         window.switchReportTab = switchReportTab; window.generateFinancialReport = generateFinancialReport; window.updateClosingPreview = updateClosingPreview; window.processClosingMonth = processClosingMonth; window.saveClosingMonth = saveClosingMonth; window.editLockedReport = editLockedReport; window.printReport = printReport;
         window.saveConfig = saveConfig; window.renderOwnerSettings = renderOwnerSettings; window.addOwnerConfig = addOwnerConfig; window.removeOwnerConfig = removeOwnerConfig; window.updateOwnerTotalPct = updateOwnerTotalPct;
         window.manualSavingsTransaction = manualSavingsTransaction; window.manualSavingsCorrection = manualSavingsCorrection; 
         window.manualEmergencyTransaction = manualEmergencyTransaction; window.manualEmergencyCorrection = manualEmergencyCorrection;
         window.addCapitalInjection = addCapitalInjection;
+        window.exportToExcel = exportToExcel; 
         window.backupData = backupData; window.initiateDataReset = initiateDataReset;
-        
+        window.loadMoreTransactions = loadMoreTransactions; 
+        window.resetTransactionPagination = resetTransactionPagination; 
+
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('trx-date').value = today; document.getElementById('inject-date').value = today;
             document.getElementById('trx-history-start').value = today; document.getElementById('trx-history-end').value = today;
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            setTimeout(() => {
+                if(document.getElementById('dashboard').style.display !== 'none') {
+                    initCharts();
+                }
+            }, 500);
         });
     </script>
 </body>
