@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sim Astrobarbershop V1.2</title>
+    <title>Sim Astrobarbershop V1.3</title>
     
     <!-- LIBRARY GRAFIK -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -527,6 +527,11 @@
                     
                     <div class="card">
                         <h3>Riwayat Transaksi</h3>
+                        <!-- SEARCH BAR ADDED HERE -->
+                        <div class="form-group">
+                            <label>Cari Transaksi</label>
+                            <input type="text" id="trx-search" placeholder="Cari layanan, barang, karyawan, atau keterangan..." oninput="window.renderTransactionHistory()">
+                        </div>
                         <div class="grid-2" style="gap:10px; margin-bottom:10px;">
                             <div class="form-group"><label>Mulai</label><input type="date" id="trx-history-start" onchange="window.resetTransactionPagination()"></div>
                             <div class="form-group"><label>Selesai</label><input type="date" id="trx-history-end" onchange="window.resetTransactionPagination()"></div>
@@ -830,7 +835,7 @@
                             <h3 style="color: var(--savings)">Tutup Buku & Bagi Hasil Owner</h3>
                             <p style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">
                                 Perhitungan Bagi Hasil didasarkan pada <strong>Laba Bersih Dikurangi Tabungan & Dana Darurat</strong>.
-                                <br><strong style="color:var(--primary)">Kasbon Owner akan otomatis dipotong dari Bagi Hasil.</strong>
+                                <br><strong style="color:var(--primary)">Kasbon Owner akan otomatis dipotong dari Bagi Hasil (Periode Ini Saja).</strong>
                             </p>
                             <div class="grid-2">
                                 <div>
@@ -925,7 +930,7 @@
                         <div class="form-group"><input type="text" id="kasbon-owner-amount" placeholder="Nominal Pinjaman (Rp)" class="money-input" inputmode="numeric"></div>
                         <div class="form-group"><input type="text" id="kasbon-owner-desc" placeholder="Keterangan (Opsional)"></div>
                         <button class="btn btn-warning" style="width:100%" onclick="window.saveOwnerKasBon()">SIMPAN KASBON OWNER</button>
-                        <p style="font-size:0.75rem; color:#888; margin-top:5px;">*Kasbon akan otomatis dipotong saat proses Tutup Buku.</p>
+                        <p style="font-size:0.75rem; color:#888; margin-top:5px;">*Kasbon akan otomatis dipotong saat proses Tutup Buku (Periode ini).</p>
                     </div>
                     
                     <!-- TABUNGAN CARD -->
@@ -1036,33 +1041,30 @@
     </div>
 
     <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-        
-        // Added Firestore and Auth imports necessary for the app logic
-        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+      import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+      import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
-        // Your web app's Firebase configuration (UPDATED AS REQUESTED)
-        const firebaseConfig = {
-          apiKey: "AIzaSyDmJTS6f_3kdAaM97O8HGvQqOBeTL8V8z8",
-          authDomain: "laporan-keuangan-8b07a.firebaseapp.com",
-          databaseURL: "https://laporan-keuangan-8b07a-default-rtdb.asia-southeast1.firebasedatabase.app",
-          projectId: "laporan-keuangan-8b07a",
-          storageBucket: "laporan-keuangan-8b07a.firebasestorage.app",
-          messagingSenderId: "306767849046",
-          appId: "1:306767849046:web:9b5887e546e8616998bdf7",
-          measurementId: "G-XSDPZ3GCJ1"
-        };
+      // Your web app's Firebase configuration
+      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+      const firebaseConfig = {
+        apiKey: "AIzaSyDmJTS6f_3kdAaM97O8HGvQqOBeTL8V8z8",
+        authDomain: "laporan-keuangan-8b07a.firebaseapp.com",
+        databaseURL: "https://laporan-keuangan-8b07a-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "laporan-keuangan-8b07a",
+        storageBucket: "laporan-keuangan-8b07a.firebasestorage.app",
+        messagingSenderId: "306767849046",
+        appId: "1:306767849046:web:9b5887e546e8616998bdf7",
+        measurementId: "G-XSDPZ3GCJ1"
+      };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
 
         let appData = {
             products: [], employees: [], goods: [], transactions: [],
@@ -1472,8 +1474,11 @@
             renderTransactionHistory();
         }
         
+        // UPDATED: SEARCH LOGIC ADDED HERE
         function renderTransactionHistory() { 
             const startInput = document.getElementById('trx-history-start').value, endInput = document.getElementById('trx-history-end').value; 
+            const searchInput = document.getElementById('trx-search') ? document.getElementById('trx-search').value.toLowerCase() : '';
+            
             let filtered = []; 
             if(!startInput && !endInput) { 
                 const today = new Date().toISOString().split('T')[0]; 
@@ -1484,6 +1489,22 @@
                 const start = startInput || '1970-01-01', end = endInput || '2099-12-31'; 
                 filtered = appData.transactions.filter(t => t.date >= start && t.date <= end); 
             } 
+
+            // Apply Search Filter
+            if(searchInput) {
+                filtered = filtered.filter(t => {
+                    const productName = (t.details.productName || '').toLowerCase();
+                    const description = (t.details.description || '').toLowerCase();
+                    
+                    let empName = '';
+                    if(t.details.employeeId) {
+                        const emp = appData.employees.find(e => e.id === t.details.employeeId);
+                        if(emp) empName = emp.name.toLowerCase();
+                    }
+
+                    return productName.includes(searchInput) || description.includes(searchInput) || empName.includes(searchInput);
+                });
+            }
             
             const startIdx = 0;
             const endIdx = transactionPage * itemsPerPage;
@@ -2055,14 +2076,15 @@
             document.getElementById('final-result').style.display = 'none';
             document.getElementById('print-period').innerText = `${start} s/d ${end}`;
             
-            const trxInPeriod = appData.transactions.filter(t => t.date >= start && t.date <= end && t.amount > 0);
-            const incomeTrx = trxInPeriod.filter(t => t.type === 'income');
-            const expenseTrx = trxInPeriod.filter(t => t.type === 'expense');
-            const injectTrx = trxInPeriod.filter(t => t.type === 'modal_in');
-            const savingOutTrx = trxInPeriod.filter(t => t.type === 'saving_out');
-            const savingInTrx = trxInPeriod.filter(t => t.type === 'saving_in');
-            const emergOutTrx = trxInPeriod.filter(t => t.type === 'emergency_saving_out');
-            const emergInTrx = trxInPeriod.filter(t => t.type === 'emergency_saving_in');
+            // EXPLICIT VOID EXCLUSION LOGIC ADDED
+            const trxInPeriod = appData.transactions.filter(t => t.date >= start && t.date <= end);
+            const incomeTrx = trxInPeriod.filter(t => t.type === 'income' && !t.details.isVoid);
+            const expenseTrx = trxInPeriod.filter(t => t.type === 'expense' && !t.details.isVoid);
+            const injectTrx = trxInPeriod.filter(t => t.type === 'modal_in' && !t.details.isVoid);
+            const savingOutTrx = trxInPeriod.filter(t => t.type === 'saving_out' && !t.details.isVoid);
+            const savingInTrx = trxInPeriod.filter(t => t.type === 'saving_in' && !t.details.isVoid);
+            const emergOutTrx = trxInPeriod.filter(t => t.type === 'emergency_saving_out' && !t.details.isVoid);
+            const emergInTrx = trxInPeriod.filter(t => t.type === 'emergency_saving_in' && !t.details.isVoid);
             
             const totalIncome = incomeTrx.reduce((a,b)=>a+b.amount,0);
             const totalExpense = expenseTrx.reduce((a,b)=>a+b.amount,0);
@@ -2084,7 +2106,7 @@
 
             const opProfit = totalIncome - totalExpense - totalSalary;
 
-            const allInjectTrx = appData.transactions.filter(t => t.type === 'modal_in');
+            const allInjectTrx = appData.transactions.filter(t => t.type === 'modal_in' && !t.details.isVoid);
             const totalInjectAllTime = allInjectTrx.reduce((a,b)=>a+b.amount,0);
             
             const cashMovementInPeriod = totalIncome - totalExpense - totalSalary - totalSavingsOut + totalSavingsIn - totalEmergOut + totalEmergIn;
@@ -2205,12 +2227,14 @@
             let totalPctCheck = 0;
             let calculatedShares = updateClosingPreview(profit, sav, emerg);
 
-            // V1.7.2: DEDUCT KASBON OWNER
+            // V1.7.2: DEDUCT KASBON OWNER (PER PERIODE FIX)
             calculatedShares.forEach((share) => {
-                // Sum all owner_kasbon transactions for this owner ID
+                // FIX: Filter by current report period (s and e)
                 const ownerKasbons = appData.transactions.filter(t => 
                     t.type === 'owner_kasbon' && 
-                    t.details.ownerId === share.id
+                    t.details.ownerId === share.id &&
+                    t.date >= s &&
+                    t.date <= e
                 );
                 const totalKasbon = ownerKasbons.reduce((sum, t) => sum + t.amount, 0);
                 
@@ -2230,12 +2254,6 @@
             const totalOwnerNetPayout = calculatedShares.reduce((a,b)=>a+b.netAmount,0);
             
             // V1.7.2 FIX: Logic perubahan agar Saldo Akhir menjadi 0
-            // Karena Kasbon Owner mungkin tidak mengurangi fisik kas saat transaksi (masih dianggap uang kas),
-            // maka saat 'Tutup Buku', uang hasil bagi hasil yang DIPOTONG KASBON sebenarnya tidak keluar dari kas fisik.
-            // Namun secara akuntansi untuk user, saldo harus 0.
-            // Jadi kita harus mengurangi 'Total Owner Net Payout' PLUS 'Total Kasbon yang dipotong'.
-            // Total deduction = Net Payout (uang diambil owner) + Kasbon (uang disimpan/tetap di kas tapi dianggap 'bayar hutang').
-            
             const totalOwnerKasbonDeduction = calculatedShares.reduce((a,b)=>a+b.kasbon,0);
             
             const finalCash = currentCash - sav - emerg - totalOwnerNetPayout - totalOwnerKasbonDeduction;
@@ -2265,7 +2283,7 @@
                     </div>
                     ${sh.kasbon > 0 ? `
                     <div class="slip-row slip-deduction">
-                        <span>Potongan Kasbon:</span>
+                        <span>Potongan Kasbon (Periode Ini):</span>
                         <span>-${formatRupiah(sh.kasbon)}</span>
                     </div>` : ''}
                     <div class="slip-row final">
@@ -2316,7 +2334,7 @@
                         date: new Date().toISOString().split('T')[0], 
                         type: 'expense', 
                         amount: totalOwnerNetPayout, 
-                        details: { description: 'Bagi Hasil Owner (Bersih - Potong Kasbon)' } 
+                        details: { description: 'Bagi Hasil Owner (Bersih - Potong Kasbon Periode Ini)' } 
                     });
                 }
                 
@@ -2575,7 +2593,7 @@
             }
 
             const months = {};
-            appData.transactions.filter(t => t.type === 'income' && t.amount > 0).forEach(t => {
+            appData.transactions.filter(t => t.type === 'income' && t.amount > 0 && !t.details.isVoid).forEach(t => {
                 const d = new Date(t.date);
                 const key = `${d.getFullYear()}-${d.getMonth()}`; 
                 if(!months[key]) months[key] = 0;
@@ -2616,7 +2634,7 @@
             });
 
             let serviceAmt = 0, goodAmt = 0;
-            appData.transactions.filter(t => t.type === 'income' && t.amount > 0).forEach(t => {
+            appData.transactions.filter(t => t.type === 'income' && t.amount > 0 && !t.details.isVoid).forEach(t => {
                 if(t.details.category === 'good') goodAmt += t.amount;
                 else serviceAmt += t.amount;
             });
@@ -2641,7 +2659,7 @@
             });
 
             const barberStats = {};
-            appData.transactions.filter(t => t.type === 'income' && t.details.category === 'service' && t.amount > 0).forEach(t => {
+            appData.transactions.filter(t => t.type === 'income' && t.details.category === 'service' && t.amount > 0 && !t.details.isVoid).forEach(t => {
                 const eid = t.details.employeeId;
                 if(!barberStats[eid]) barberStats[eid] = 0;
                 barberStats[eid] += t.amount;
